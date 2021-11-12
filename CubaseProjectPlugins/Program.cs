@@ -21,18 +21,23 @@ public static class Program
 
         string[] projectPaths = Directory.GetFiles(
             @"C:\Users\Fots\Downloads\projects", "*.cpr", SearchOption.AllDirectories);
-        // @"H:\Production", "*.cpr", SearchOption.AllDirectories);
 
         foreach (string projectPath in projectPaths)
         {
             Console.WriteLine(projectPath);
 
-            PluginCounter pluginCounter = new(ignoreNames);
-            Dictionary<string, int> plugins = pluginCounter.GetCounts(projectPath);
+            PluginCounter pluginCounter = new(
+                projectBytes: File.ReadAllBytes(projectPath),
+                ignoreNames: ignoreNames
+            );
+            PluginDetails details = pluginCounter.GetCounts();
 
-            foreach (KeyValuePair<string, int> kvp in plugins)
+            Console.WriteLine();
+            Console.WriteLine($"{details.CubaseVersion} ({details.Architecture})");
+            Console.WriteLine();
+            foreach (string plugin in details.Plugins)
             {
-                Console.WriteLine($"{kvp.Key} => {kvp.Value}");
+                Console.WriteLine(plugin);
             }
             Console.WriteLine();
         }

@@ -4,125 +4,107 @@ public class PluginCounter
 {
     public string[] IgnoreNames { get; set; }
 
-    public PluginCounter(string[] ignoreNames)
+    private readonly byte[] _projectBytes;
+
+    private int _index;
+
+    public PluginCounter(byte[] projectBytes, string[] ignoreNames)
     {
         IgnoreNames = ignoreNames;
+
+        _projectBytes = projectBytes;
+        _index = 0;
     }
 
-    public Dictionary<string, int> GetCounts(string path)
+    public PluginDetails GetCounts()
     {
-        byte[] projectBytes = File.ReadAllBytes(path);
-
         byte[] pluginUidSearchTerm = Encoding.ASCII.GetBytes("Plugin UID\0");
-        byte[] pluginNameSearchTerm = Encoding.ASCII.GetBytes("Plugin Name\0");
+        byte[] appVersionSearchTerm = Encoding.ASCII.GetBytes("PAppVersion\0");
 
         // Find every byte that's the letter P.
-        Dictionary<string, int> plugins = new();
-        for (int i = 0; i < projectBytes.Length; i++)
+        HashSet<string> plugins = new();
+        string cubaseVersion = "Unknown";
+        string architecture = "Unknown";
+
+        for (int i = 0; i < _projectBytes.Length; i++)
         {
             // Check if the current byte matches the first byte we're searching for.
-            if (projectBytes[i] != pluginUidSearchTerm[0])
+            if (_projectBytes[i] != pluginUidSearchTerm[0])
             {
                 continue;
             }
 
-            // Check that the next set of bytes match the entire set of bytes we are after.
-            byte[] uidTerm = projectBytes[i..(i + pluginUidSearchTerm.Length)];
-            if (!uidTerm.SequenceEqual(pluginUidSearchTerm))
+            // Check that the next set of bytes relate to a plugin.
+            byte[] uidTerm = _projectBytes[i..(i + pluginUidSearchTerm.Length)];
+            if (uidTerm.SequenceEqual(pluginUidSearchTerm))
             {
+                _index = i + pluginUidSearchTerm.Length + 22;
+                string key;
+                string name;
+
+                _ = GetToken();  // GUID
+                _index += 3;
+
+                key = GetToken();
+                if (key != "Plugin Name")
+                {
+                    continue;
+                }
+
+                _index += 5;
+                name = GetToken();
+
+                _index += 3;
+                key = GetToken();
+
+                if (key == "Original Plugin Name")
+                {
+                    _index += 5;
+                    name = GetToken();
+                }
+
+                // Skip names that are to be ignored.
+                if (IgnoreNames.Contains(name))
+                {
+                    continue;
+                }
+
+                plugins.Add(name);
                 continue;
             }
 
-            int guidLengthIndex = i + pluginUidSearchTerm.Length + 22;
-            int guidLength = projectBytes[guidLengthIndex];
-
-            int pluginNameKeyIndex = guidLengthIndex + guidLength + 5;
-
-            byte[] nameTerm = projectBytes[pluginNameKeyIndex..(pluginNameKeyIndex + pluginNameSearchTerm.Length)];
-            if (!nameTerm.SequenceEqual(pluginNameSearchTerm))
+            // Check that the next set of bytes related to the Cubase version.
+            byte[] versionTerm = _projectBytes[i..(i + appVersionSearchTerm.Length)];
+            if (versionTerm.SequenceEqual(appVersionSearchTerm))
             {
-                continue;
-            }
+                _index = i + appVersionSearchTerm.Length + 20;
+                cubaseVersion = GetToken();
 
-            int pluginNameValueLengthIndex = pluginNameKeyIndex + 17;
-            int pluginNameValueLegnth = projectBytes[pluginNameValueLengthIndex];
+                _index += 3;
+                _ = GetToken();  // Application Name (always "Cubase")
 
-            int pluginNameValueIndex = pluginNameValueLengthIndex + 1;
-
-            // Grab the plugin name.
-            string name = GetNullTerminatedString(
-                projectBytes[pluginNameValueIndex..(pluginNameValueIndex + pluginNameValueLegnth)]);
-
-            int extraPropertyLengthIndex = pluginNameValueIndex + pluginNameValueLegnth + 3;
-            int extraPropertyLength = projectBytes[extraPropertyLengthIndex];
-
-            int extraPropertyIndex = extraPropertyLengthIndex + 1;
-
-            string extraProperty = GetNullTerminatedString(
-                projectBytes[extraPropertyIndex..(extraPropertyIndex + extraPropertyLength)]);
-
-            if (extraProperty == "Original Plugin Name")
-            {
-                int originalPluginNameLengthIndex = extraPropertyIndex + extraPropertyLength + 5;
-                int originalPluginNameLength = projectBytes[originalPluginNameLengthIndex];
-                int originalPluginNameIndex = originalPluginNameLengthIndex + 1;
-
-                string originalPluginName = GetNullTerminatedString(
-                    projectBytes[originalPluginNameIndex..(originalPluginNameIndex + originalPluginNameLength)]
-                );
-
-                name = originalPluginName;
-            }
-
-            // Skip names that are to be ignored.
-            if (IgnoreNames.Contains(name))
-            {
-                continue;
-            }
-
-            if (plugins.ContainsKey(name))
-            {
-                plugins[name]++;
-            }
-            else
-            {
-                plugins[name] = 1;
+                _index += 7;
+                architecture = GetToken();
             }
         }
 
-        return plugins;
+        return new PluginDetails(cubaseVersion, architecture, plugins);
     }
 
-    private string GetNullTerminatedString(byte[] buffer)
+    private string GetToken()
     {
+        int length = _projectBytes[_index];
+        _index++;
+
+        byte[] buffer = _projectBytes[_index..(_index + length)];
         StringBuilder sb = new();
         for (int i = 0; i < buffer.Length && buffer[i] != 0; i++)
         {
             sb.Append((char)buffer[i]);
         }
-        return sb.ToString();
-    }
 
-    private string[] GetNullTerminatedStrings(byte[] buffer, int startIndex, int count)
-    {
-        List<string> strings = new();
-        int i = startIndex;
-
-        while (count-- > 0)
-        {
-            StringBuilder sb = new();
-            for (; buffer[i] != 0; i++)
-            {
-                sb.Append((char)buffer[i]);
-            }
-            strings.Add(sb.ToString());
-
-            while (buffer[i] == 0)
-            {
-                i++;
-            }
-        }
-
-        return strings.ToArray();
+        string text = sb.ToString();
+        _index += length;
+        return text;
     }
 }
