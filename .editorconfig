@@ -1,0 +1,27 @@
+# See https://docs.microsoft.com/en-us/dotnet/fundamentals/code-analysis/code-style-rule-options
+# for C# defaults.
+
+# Set this to the top-most EditorConfig file.
+root = true
+
+# Use spaces for indentation.
+[*]
+indent_style = space
+
+# XML project and config files.
+[*.{csprojj}]
+indent_size = 2
+
+# C# code.
+[*.cs]
+
+# Configure indentation, new lines and encoding.
+charset = utf-8-bom
+end_of_line = crlf
+indent_size = 4
+max_line_length = 100
+insert_final_newline = true
+trim_trailing_whitespace = true
+
+# Ensure that unused imports are reported.
+dotnet_diagnostic.CS8019.severity = warning
