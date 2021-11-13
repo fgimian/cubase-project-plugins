@@ -1,4 +1,4 @@
-namespace CubaseProjectPlugins
+﻿namespace CubaseProjectPlugins
 {
     public class PluginDetails
     {
@@ -10,14 +10,14 @@ namespace CubaseProjectPlugins
 
         public string Architecture { get; set; }
 
-        public HashSet<string> Plugins { get; set; }
+        public SortedSet<string> Plugins { get; set; }
 
         public PluginDetails(
             string cubaseApplication,
             string cubaseVersion,
             string cubaseReleaseDate,
             string architecture,
-            HashSet<string> plugins)
+            SortedSet<string> plugins)
         {
             CubaseApplication = cubaseApplication;
             CubaseVersion = cubaseVersion;

@@ -1,4 +1,4 @@
-namespace CubaseProjectPlugins;
+﻿namespace CubaseProjectPlugins;
 
 public class PluginCounter
 {
@@ -22,7 +22,7 @@ public class PluginCounter
         byte[] appVersionSearchTerm = Encoding.ASCII.GetBytes("PAppVersion\0");
 
         // Find every byte that's the letter P.
-        HashSet<string> plugins = new();
+        SortedSet<string> plugins = new();
         string cubaseApplication = "Cubase";
         string cubaseVersion = "Unknown";
         string cubaseReleaseDate = "Unknown";
@@ -101,7 +101,8 @@ public class PluginCounter
             }
         }
 
-        return new PluginDetails(cubaseApplication, cubaseVersion, cubaseReleaseDate, architecture, plugins);
+        return new PluginDetails(
+            cubaseApplication, cubaseVersion, cubaseReleaseDate, architecture, plugins);
     }
 
     private string GetToken()

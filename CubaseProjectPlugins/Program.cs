@@ -4,6 +4,7 @@ public static class Program
 {
     public static void Main(string[] args)
     {
+        // Create a list of plugins to ignore which are included in Cubase itself.
         string[] ignoreNames = new string[]
         {
             // Special Track Types
@@ -114,12 +115,12 @@ public static class Program
             "WahWah",
         };
 
-        string[] projectPaths = Directory.GetFiles(
-            @"C:\Users\Fots\Downloads\projects", "*.cpr", SearchOption.AllDirectories);
+        string path = @"C:\Users\Fots\Downloads\projects";
+        string[] projectPaths = Directory.GetFiles(path, "*.cpr", SearchOption.AllDirectories);
 
         foreach (string projectPath in projectPaths)
         {
-            Console.WriteLine(projectPath);
+            string displayPath = Path.GetRelativePath(path, projectPath);
 
             PluginCounter pluginCounter = new(
                 projectBytes: File.ReadAllBytes(projectPath),
@@ -128,18 +129,19 @@ public static class Program
             PluginDetails details = pluginCounter.GetCounts();
 
             Console.WriteLine();
-            Console.WriteLine($"{details.CubaseApplication} {details.CubaseVersion} ({details.Architecture})");
+            Console.WriteLine(
+                $"{displayPath} - {details.CubaseApplication} {details.CubaseVersion} " +
+                $"({details.Architecture})");
 
             if (details.Plugins.Count > 0)
             {
                 Console.WriteLine();
                 foreach (string plugin in details.Plugins)
                 {
-                    Console.WriteLine(plugin);
+                    Console.WriteLine($"    > {plugin}");
                 }
             }
-
-            Console.WriteLine();
         }
+        Console.WriteLine();
     }
 }
