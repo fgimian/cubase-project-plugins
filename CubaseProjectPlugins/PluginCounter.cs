@@ -23,7 +23,9 @@ public class PluginCounter
 
         // Find every byte that's the letter P.
         HashSet<string> plugins = new();
+        string cubaseApplication = "Cubase";
         string cubaseVersion = "Unknown";
+        string cubaseReleaseDate = "Unknown";
         string architecture = "Unknown";
 
         for (int i = 0; i < _projectBytes.Length; i++)
@@ -42,7 +44,7 @@ public class PluginCounter
                 string key;
                 string name;
 
-                _ = GetToken();  // GUID
+                _ = GetToken(); // GUID
                 _index += 3;
 
                 key = GetToken();
@@ -77,18 +79,29 @@ public class PluginCounter
             byte[] versionTerm = _projectBytes[i..(i + appVersionSearchTerm.Length)];
             if (versionTerm.SequenceEqual(appVersionSearchTerm))
             {
-                _index = i + appVersionSearchTerm.Length + 20;
+                _index = i + appVersionSearchTerm.Length + 9;
+                cubaseApplication = GetToken();
+
+                _index += 3;
                 cubaseVersion = GetToken();
 
                 _index += 3;
-                _ = GetToken();  // Application Name (always "Cubase")
+                cubaseReleaseDate = GetToken();
 
                 _index += 7;
-                architecture = GetToken();
+                try
+                {
+                    architecture = GetToken();
+                }
+                catch (IndexOutOfRangeException)
+                {
+                    // Older 32-bit versions of Cubase didn't list the architecture in the project file.
+                    architecture = "WIN32";
+                }
             }
         }
 
-        return new PluginDetails(cubaseVersion, architecture, plugins);
+        return new PluginDetails(cubaseApplication, cubaseVersion, cubaseReleaseDate, architecture, plugins);
     }
 
     private string GetToken()
