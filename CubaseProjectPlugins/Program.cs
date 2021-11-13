@@ -1,8 +1,17 @@
 ﻿namespace CubaseProjectPlugins;
 
+/// <summary>
+/// Implements the main CLI app for obtaining Cubase plugin details for a project.
+/// </summary>
 public static class Program
 {
-    public static void Main(string[] args)
+    /// <summary>
+    /// Displays all plugins used in your Cubase projects along with the Cubase version the project
+    /// was created with.
+    /// </summary>
+    /// <param name="path">The path to search recursively for Cubase projects</param>
+    /// <returns></returns>
+    public static int Main(string path)
     {
         // Create a list of plugins to ignore which are included in Cubase itself.
         string[] ignoreNames = new string[]
@@ -115,18 +124,17 @@ public static class Program
             "WahWah",
         };
 
-        string path = @"C:\Users\Fots\Downloads\projects";
         string[] projectPaths = Directory.GetFiles(path, "*.cpr", SearchOption.AllDirectories);
 
         foreach (string projectPath in projectPaths)
         {
             string displayPath = Path.GetRelativePath(path, projectPath);
 
-            PluginCounter pluginCounter = new(
+            ProjectReader reader = new(
                 projectBytes: File.ReadAllBytes(projectPath),
                 ignoreNames: ignoreNames
             );
-            PluginDetails details = pluginCounter.GetCounts();
+            ProjectDetails details = reader.GetProjectDetails();
 
             Console.WriteLine();
             Console.WriteLine(
@@ -143,5 +151,7 @@ public static class Program
             }
         }
         Console.WriteLine();
+
+        return 0;
     }
 }

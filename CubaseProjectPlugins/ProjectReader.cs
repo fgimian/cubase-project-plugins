@@ -1,14 +1,27 @@
 ﻿namespace CubaseProjectPlugins;
 
-public class PluginCounter
+/// <summary>
+/// Determines the used plugins in a Cubase project along with related version of Cubase which the
+/// project was created on by parsing the binary in a *.cpr file.
+/// </summary>
+public class ProjectReader
 {
+    /// <summary>
+    /// All plugin names that should not captured.  Typically this will be the plugins which are
+    /// included in Cubase itself.
+    /// </summary>
     public string[] IgnoreNames { get; set; }
 
     private readonly byte[] _projectBytes;
 
     private int _index;
 
-    public PluginCounter(byte[] projectBytes, string[] ignoreNames)
+    /// <summary>
+    /// Initialises a new instance of the <see cref="ProjectReader"/> class.
+    /// </summary>
+    /// <param name="projectBytes">The binary bytes from a *.cpr Cubase project file.</param>
+    /// <param name="ignoreNames">All plugins which should be ignored.</param>
+    public ProjectReader(byte[] projectBytes, string[] ignoreNames)
     {
         IgnoreNames = ignoreNames;
 
@@ -16,7 +29,11 @@ public class PluginCounter
         _index = 0;
     }
 
-    public PluginDetails GetCounts()
+    /// <summary>
+    /// Obtains all project details including Cubase version and plugins used.
+    /// </summary>
+    /// <returns>An instance of <see cref="ProjectDetails"/>containing project details.</returns>
+    public ProjectDetails GetProjectDetails()
     {
         byte[] pluginUidSearchTerm = Encoding.ASCII.GetBytes("Plugin UID\0");
         byte[] appVersionSearchTerm = Encoding.ASCII.GetBytes("PAppVersion\0");
@@ -101,7 +118,7 @@ public class PluginCounter
             }
         }
 
-        return new PluginDetails(
+        return new ProjectDetails(
             cubaseApplication, cubaseVersion, cubaseReleaseDate, architecture, plugins);
     }
 
