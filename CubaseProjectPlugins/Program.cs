@@ -124,7 +124,22 @@ public static class Program
             "WahWah",
         };
 
-        string[] projectPaths = Directory.GetFiles(path, "*.cpr", SearchOption.AllDirectories);
+        if (path == "")
+        {
+            Console.Error.WriteLine("You must specify a path");
+            return 1;
+        }
+
+        string[] projectPaths;
+        try
+        {
+            projectPaths = Directory.GetFiles(path, "*.cpr", SearchOption.AllDirectories);
+        }
+        catch (Exception e)
+        {
+            Console.Error.WriteLine(e.Message); ;
+            return 1;
+        }
 
         foreach (string projectPath in projectPaths)
         {
@@ -134,20 +149,28 @@ public static class Program
                 projectBytes: File.ReadAllBytes(projectPath),
                 ignoreNames: ignoreNames
             );
-            ProjectDetails details = reader.GetProjectDetails();
 
             Console.WriteLine();
-            Console.WriteLine(
-                $"{displayPath} - {details.CubaseApplication} {details.CubaseVersion} " +
-                $"({details.Architecture})");
-
-            if (details.Plugins.Count > 0)
+            try
             {
-                Console.WriteLine();
-                foreach (string plugin in details.Plugins)
+                ProjectDetails details = reader.GetProjectDetails();
+
+                Console.WriteLine(
+                    $"{displayPath} - {details.CubaseApplication} {details.CubaseVersion} " +
+                    $"({details.Architecture})");
+
+                if (details.Plugins.Count > 0)
                 {
-                    Console.WriteLine($"    > {plugin}");
+                    Console.WriteLine();
+                    foreach (string plugin in details.Plugins)
+                    {
+                        Console.WriteLine($"    > {plugin}");
+                    }
                 }
+            }
+            catch (InvalidDataException e)
+            {
+                Console.WriteLine($"{displayPath} - Invalid project file {e}");
             }
         }
         Console.WriteLine();
