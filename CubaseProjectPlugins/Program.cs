@@ -156,7 +156,7 @@ public static class Program
                 ProjectDetails details = reader.GetProjectDetails();
 
                 Console.WriteLine(
-                    $"{displayPath} - {details.CubaseApplication} {details.CubaseVersion} " +
+                    $"{displayPath} [{details.CubaseApplication} {details.CubaseVersion}] " +
                     $"({details.Architecture})");
 
                 if (details.Plugins.Count > 0)
