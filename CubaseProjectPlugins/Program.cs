@@ -1,4 +1,4 @@
-namespace CubaseProjectPlugins;
+﻿namespace CubaseProjectPlugins;
 
 public static class Program
 {
@@ -6,19 +6,22 @@ public static class Program
     {
         string[] ignoreNames = new string[]
         {
+            // Special Track Types
+            "Sampler Track",
+            // Channel Strip
             "Input Filter",
             "Standard Panner",
-            "EQ",
-            "Sampler Track",
+            "Noise Gate",
             "Standard Compressor",
-            // "Noise Gate",  // TODO check
-            // "Tape Saturation",  // TODO check
-            // "Tube Saturation",  // TODO check
-            // "Standard Limiter",
+            "EQ",
+            "Tape Saturation",
+            "Tube Saturation",
+            "Standard Limiter",
             // Plugins
             "AmpSimulator",
             "AutoPan",
             "Bitcrusher",
+            "BitCrusher",
             "Brickwall Limiter",
             "Chopper",
             "Chorus",
@@ -30,6 +33,7 @@ public static class Program
             "Distroyer",
             "DJ-Eq",
             "DualFilter",
+            "Embracer",
             "EnvelopeShaper",
             "Expander",
             "Flanger",
@@ -38,6 +42,7 @@ public static class Program
             "GEQ-10",
             "GEQ-30",
             "Grungelizer",
+            "HALionOne",
             "Imager",
             "Limiter",
             "LoopMash",
@@ -45,17 +50,23 @@ public static class Program
             "Magneto II",
             "Maximizer",
             "Metalizer",
+            "MIDI Gate",
             "MidiGate",
             "Mix6To2",
+            "Mix6to2",
             "MixConvert V6",
+            "MixConvert",
+            "MixConvert-Control Room",
             "MixerDelay",
             "ModMachine",
             "MonoDelay",
+            "Monologue",
             "MonoToStereo",
             "MorphFilter",
             "MultibandCompressor",
             "MultibandEnvelopeShaper",
             "MultibandExpander",
+            "MultiScope",
             "MultiTap Delay",
             "Mystic",
             "Octaver",
@@ -80,8 +91,10 @@ public static class Program
             "StudioChorus",
             "StudioEQ",
             "SuperVision",
+            "SurroundPan",
             "TestGenerator",
             "ToneBooster",
+            "Tonic",
             "Tranceformer",
             "Tremolo",
             "Tube Compressor",
