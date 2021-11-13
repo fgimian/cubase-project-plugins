@@ -9,8 +9,8 @@ public static class Program
     /// Displays all plugins used in your Cubase projects along with the Cubase version the project
     /// was created with.
     /// </summary>
-    /// <param name="path">The path to search recursively for Cubase projects</param>
-    /// <returns></returns>
+    /// <param name="path">The path to search recursively for Cubase projects.</param>
+    /// <returns>The status code of the console application.</returns>
     public static int Main(string path)
     {
         // Create a list of plugins to ignore which are included in Cubase itself.
@@ -18,6 +18,7 @@ public static class Program
         {
             // Special Track Types
             "Sampler Track",
+
             // Channel Strip
             "Input Filter",
             "Standard Panner",
@@ -27,6 +28,7 @@ public static class Program
             "Tape Saturation",
             "Tube Saturation",
             "Standard Limiter",
+
             // Plugins
             "AmpSimulator",
             "AutoPan",
@@ -124,7 +126,7 @@ public static class Program
             "WahWah",
         };
 
-        if (path == "")
+        if (path == string.Empty)
         {
             Console.Error.WriteLine("You must specify a path");
             return 1;
@@ -137,7 +139,7 @@ public static class Program
         }
         catch (Exception e)
         {
-            Console.Error.WriteLine(e.Message); ;
+            Console.Error.WriteLine(e.Message);
             return 1;
         }
 
@@ -147,8 +149,7 @@ public static class Program
 
             ProjectReader reader = new(
                 projectBytes: File.ReadAllBytes(projectPath),
-                ignoreNames: ignoreNames
-            );
+                ignoreNames: ignoreNames);
 
             Console.WriteLine();
             try
@@ -173,6 +174,7 @@ public static class Program
                 Console.WriteLine($"{displayPath} - Invalid project file {e}");
             }
         }
+
         Console.WriteLine();
 
         return 0;

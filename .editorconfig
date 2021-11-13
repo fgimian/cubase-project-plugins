@@ -25,3 +25,18 @@ trim_trailing_whitespace = true
 
 # Ensure that unused imports are reported.
 dotnet_diagnostic.CS8019.severity = warning
+
+# Disable forced trailing commas.
+dotnet_diagnostic.SA1413.severity = none
+
+# Disable a requirement of having a file header at the top of all files.
+dotnet_diagnostic.SA1633.severity = none
+
+# Disable forced usage of this to prefix local calls.
+dotnet_diagnostic.SA1101.severity = none
+
+# Allow fields to be prefixed with an underscore for private and protected members.
+dotnet_diagnostic.SA1309.severity = none
+
+# Disable using directives having to be in a namespace (as this is broken for globoal usings).
+dotnet_diagnostic.SA1200.severity = none

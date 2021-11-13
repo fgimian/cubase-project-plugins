@@ -6,18 +6,12 @@
 /// </summary>
 public class ProjectReader
 {
-    /// <summary>
-    /// All plugin names that should not captured.  Typically this will be the plugins which are
-    /// included in Cubase itself.
-    /// </summary>
-    public string[] IgnoreNames { get; set; }
-
     private readonly byte[] _projectBytes;
 
     private int _index;
 
     /// <summary>
-    /// Initialises a new instance of the <see cref="ProjectReader"/> class.
+    /// Initializes a new instance of the <see cref="ProjectReader"/> class.
     /// </summary>
     /// <param name="projectBytes">The binary bytes from a *.cpr Cubase project file.</param>
     /// <param name="ignoreNames">All plugins which should be ignored.</param>
@@ -28,6 +22,12 @@ public class ProjectReader
         _projectBytes = projectBytes;
         _index = 0;
     }
+
+    /// <summary>
+    /// Gets or sets all plugin names that should not captured.  Typically this will be the plugins
+    /// which are included in Cubase itself.
+    /// </summary>
+    public string[] IgnoreNames { get; set; }
 
     /// <summary>
     /// Obtains all project details including Cubase version and plugins used.
