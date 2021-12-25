@@ -9,9 +9,10 @@ public static class Program
     /// Displays all plugins used in your Cubase projects along with the Cubase version the project
     /// was created with.
     /// </summary>
-    /// <param name="path">The path to search recursively for Cubase projects.</param>
+    /// <param name="path">The paths to search recursively for Cubase projects.</param>
+    /// <param name="ignorePattern">Patterns to ignore when searching for projects.</param>
     /// <returns>The status code of the console application.</returns>
-    public static int Main(string path)
+    public static int Main(string[] path, string[] ignorePattern)
     {
         // Create a list of plugins to ignore which are included in Cubase itself.
         string[] ignoreNames = new string[]
@@ -126,16 +127,24 @@ public static class Program
             "WahWah",
         };
 
-        if (path == string.Empty)
+        if (path.Length == 0)
         {
-            Console.Error.WriteLine("You must specify a path");
+            Console.Error.WriteLine("You must specify at least one path");
             return 1;
         }
 
-        string[] projectPaths;
+        List<string> projectPaths = new();
         try
         {
-            projectPaths = Directory.GetFiles(path, "*.cpr", SearchOption.AllDirectories);
+            EnumerationOptions options = new()
+            {
+                RecurseSubdirectories = true
+            };
+
+            foreach (string searchPath in path)
+            {
+                projectPaths.AddRange(Directory.GetFiles(searchPath, "*.cpr", options));
+            }
         }
         catch (Exception e)
         {
@@ -143,21 +152,46 @@ public static class Program
             return 1;
         }
 
+        SortedSet<string> plugins32 = new();
+        SortedSet<string> plugins64 = new();
+        SortedSet<string> pluginsAll = new();
+
         foreach (string projectPath in projectPaths)
         {
-            string displayPath = Path.GetRelativePath(path, projectPath);
+            bool skip = false;
+            foreach (string projectIgnorePattern in ignorePattern)
+            {
+                if (projectPath.Contains(projectIgnorePattern))
+                {
+                    skip = true;
+                    break;
+                }
+            }
+
+            if (skip)
+            {
+                continue;
+            }
+
+            //string displayPath = Path.GetRelativePath(path, projectPath);
 
             ProjectReader reader = new(
                 projectBytes: File.ReadAllBytes(projectPath),
                 ignoreNames: ignoreNames);
 
-            Console.WriteLine();
+            bool is64Bit = false;
             try
             {
                 ProjectDetails details = reader.GetProjectDetails();
 
+                if (details.Architecture == "WIN64" || details.Architecture == "MAC64 LE")
+                {
+                    is64Bit = true;
+                }
+
+                Console.WriteLine();
                 Console.WriteLine(
-                    $"{displayPath} [{details.CubaseApplication} {details.CubaseVersion}] " +
+                    $"{projectPath} [{details.CubaseApplication} {details.CubaseVersion}] " +
                     $"({details.Architecture})");
 
                 if (details.Plugins.Count > 0)
@@ -165,13 +199,59 @@ public static class Program
                     Console.WriteLine();
                     foreach (string plugin in details.Plugins)
                     {
+                        if (is64Bit)
+                        {
+                            plugins64.Add(plugin);
+                        }
+                        else
+                        {
+                            plugins32.Add(plugin);
+                        }
+                        pluginsAll.Add(plugin);
+
                         Console.WriteLine($"    > {plugin}");
                     }
                 }
             }
             catch (InvalidDataException e)
             {
-                Console.WriteLine($"{displayPath} - Invalid project file {e}");
+                Console.WriteLine($"{projectPath} - Invalid project file {e}");
+            }
+        }
+
+        if (plugins32.Count > 0)
+        {
+            Console.WriteLine();
+            Console.WriteLine("Summary of Used Plugins in 32-bit Projects");
+            Console.WriteLine();
+
+            foreach (string plugin in plugins32)
+            {
+                Console.WriteLine($"    > {plugin}");
+            }
+        }
+
+        if (plugins64.Count > 0)
+        {
+            Console.WriteLine();
+            Console.WriteLine("Summary of Used Plugins in 64-bit Projects");
+            Console.WriteLine();
+
+            foreach (string plugin in plugins64)
+            {
+                Console.WriteLine($"    > {plugin}");
+            }
+        }
+
+        if (pluginsAll.Count > 0)
+        {
+            Console.WriteLine();
+            Console.WriteLine("Summary of Used Plugins in All Projects");
+            Console.WriteLine();
+
+            foreach (string plugin in pluginsAll)
+            {
+                Console.WriteLine($"    > {plugin}");
             }
         }
 
