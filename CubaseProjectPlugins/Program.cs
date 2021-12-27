@@ -102,7 +102,7 @@ public static class Program
                 if (details.Plugins.Count > 0)
                 {
                     Console.WriteLine();
-                    foreach (Plugin plugin in details.Plugins)
+                    foreach (Plugin plugin in details.Plugins.OrderBy(p => p.Name))
                     {
                         if (is64Bit)
                         {
@@ -152,7 +152,7 @@ public static class Program
             Console.WriteLine("Summary of Used Plugins in 32-bit Projects");
             Console.WriteLine();
 
-            foreach (KeyValuePair<Plugin, int> entry in plugins32)
+            foreach (KeyValuePair<Plugin, int> entry in plugins32.OrderBy(p => p.Key.Name))
             {
                 Plugin plugin = entry.Key;
                 int count = entry.Value;
@@ -166,7 +166,7 @@ public static class Program
             Console.WriteLine("Summary of Used Plugins in 64-bit Projects");
             Console.WriteLine();
 
-            foreach (KeyValuePair<Plugin, int> entry in plugins64)
+            foreach (KeyValuePair<Plugin, int> entry in plugins64.OrderBy(p => p.Key.Name))
             {
                 Plugin plugin = entry.Key;
                 int count = entry.Value;
@@ -180,7 +180,7 @@ public static class Program
             Console.WriteLine("Summary of Used Plugins in All Projects");
             Console.WriteLine();
 
-            foreach (KeyValuePair<Plugin, int> entry in pluginsAll)
+            foreach (KeyValuePair<Plugin, int> entry in pluginsAll.OrderBy(p => p.Key.Name))
             {
                 Plugin plugin = entry.Key;
                 int count = entry.Value;

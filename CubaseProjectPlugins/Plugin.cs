@@ -43,9 +43,13 @@ public class Plugin : IComparable<Plugin>, IEquatable<Plugin>
             return 0;
         }
 
-        return Name.CompareTo(other.Name);
+        return Guid.CompareTo(other.Guid);
     }
 
+    /// <summary>
+    /// Obtains a hash representing the unique object.
+    /// </summary>
+    /// <returns>An integer representing the hash of the object.</returns>
     public override int GetHashCode()
     {
         return Guid.GetHashCode();
