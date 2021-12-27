@@ -3,7 +3,7 @@
 /// <summary>
 /// Represents a plugin within a Cubase project.
 /// </summary>
-public class Plugin : IComparable<Plugin>
+public class Plugin : IComparable<Plugin>, IEquatable<Plugin>
 {
     /// <summary>
     /// Initializes a new instance of the <see cref="Plugin"/> class.
@@ -44,5 +44,38 @@ public class Plugin : IComparable<Plugin>
         }
 
         return Name.CompareTo(other.Name);
+    }
+
+    public override int GetHashCode()
+    {
+        return Guid.GetHashCode();
+    }
+
+    /// <summary>
+    /// Compares the current plugin with another.
+    /// </summary>
+    /// <param name="other">The other plugin object to compare against.</param>
+    /// <returns>A boolean indicating whether both objects are equal.</returns>
+    public bool Equals(Plugin? other)
+    {
+        if (other is null)
+        {
+            return false;
+        }
+
+        // Optimisation for a common success case.
+        if (ReferenceEquals(this, other))
+        {
+            return true;
+        }
+
+        // If run-time types are not exactly the same, return false.
+        if (this.GetType() != other.GetType())
+        {
+            return false;
+        }
+
+        // Return true if the fields match.
+        return Guid == other.Guid && Name == other.Name;
     }
 }

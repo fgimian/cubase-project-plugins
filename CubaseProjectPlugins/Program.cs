@@ -57,9 +57,9 @@ public static class Program
             return 1;
         }
 
-        SortedSet<Plugin> plugins32 = new();
-        SortedSet<Plugin> plugins64 = new();
-        SortedSet<Plugin> pluginsAll = new();
+        Dictionary<Plugin, int> plugins32 = new();
+        Dictionary<Plugin, int> plugins64 = new();
+        Dictionary<Plugin, int> pluginsAll = new();
 
         foreach (string projectPath in projectPaths)
         {
@@ -106,14 +106,35 @@ public static class Program
                     {
                         if (is64Bit)
                         {
-                            plugins64.Add(plugin);
+                            if (plugins64.ContainsKey(plugin))
+                            {
+                                plugins64[plugin]++;
+                            }
+                            else
+                            {
+                                plugins64[plugin] = 1;
+                            }
                         }
                         else
                         {
-                            plugins32.Add(plugin);
+                            if (plugins32.ContainsKey(plugin))
+                            {
+                                plugins32[plugin]++;
+                            }
+                            else
+                            {
+                                plugins32[plugin] = 1;
+                            }
                         }
 
-                        pluginsAll.Add(plugin);
+                        if (pluginsAll.ContainsKey(plugin))
+                        {
+                            pluginsAll[plugin]++;
+                        }
+                        else
+                        {
+                            pluginsAll[plugin] = 1;
+                        }
 
                         Console.WriteLine($"    > {plugin.Guid} : {plugin.Name}");
                     }
@@ -131,9 +152,11 @@ public static class Program
             Console.WriteLine("Summary of Used Plugins in 32-bit Projects");
             Console.WriteLine();
 
-            foreach (Plugin plugin in plugins32)
+            foreach (KeyValuePair<Plugin, int> entry in plugins32)
             {
-                Console.WriteLine($"    > {plugin.Guid} : {plugin.Name}");
+                Plugin plugin = entry.Key;
+                int count = entry.Value;
+                Console.WriteLine($"    > {plugin.Guid} : {plugin.Name} ({count})");
             }
         }
 
@@ -143,9 +166,11 @@ public static class Program
             Console.WriteLine("Summary of Used Plugins in 64-bit Projects");
             Console.WriteLine();
 
-            foreach (Plugin plugin in plugins64)
+            foreach (KeyValuePair<Plugin, int> entry in plugins64)
             {
-                Console.WriteLine($"    > {plugin.Guid} : {plugin.Name}");
+                Plugin plugin = entry.Key;
+                int count = entry.Value;
+                Console.WriteLine($"    > {plugin.Guid} : {plugin.Name} ({count})");
             }
         }
 
@@ -155,9 +180,11 @@ public static class Program
             Console.WriteLine("Summary of Used Plugins in All Projects");
             Console.WriteLine();
 
-            foreach (Plugin plugin in pluginsAll)
+            foreach (KeyValuePair<Plugin, int> entry in pluginsAll)
             {
-                Console.WriteLine($"    > {plugin.Guid} : {plugin.Name}");
+                Plugin plugin = entry.Key;
+                int count = entry.Value;
+                Console.WriteLine($"    > {plugin.Guid} : {plugin.Name} ({count})");
             }
         }
 
