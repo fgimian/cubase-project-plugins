@@ -12,20 +12,25 @@ public static class Program
     /// <param name="path">The paths to search recursively for Cubase projects.</param>
     /// <param name="configPath">A path to a TOML configuration for the tool.</param>
     /// <returns>The status code of the console application.</returns>
-    public static int Main(string[] path, string configPath)
+    public static int Main(string[] path, string? configPath = null)
     {
-        string configContent;
-        try
-        {
-            configContent = File.ReadAllText(configPath, Encoding.UTF8);
-        }
-        catch (Exception ex)
-        {
-            Console.Error.WriteLine($"Unable to read the config file: {ex.Message}");
-            return 1;
-        }
+        Config config = new();
 
-        Config config = TomletMain.To<Config>(configContent);
+        if (!string.IsNullOrEmpty(configPath))
+        {
+            string configContent;
+            try
+            {
+                configContent = File.ReadAllText(configPath, Encoding.UTF8);
+            }
+            catch (Exception ex)
+            {
+                Console.Error.WriteLine($"Unable to read the config file: {ex.Message}");
+                return 1;
+            }
+
+            config = TomletMain.To<Config>(configContent);
+        }
 
         if (path.Length == 0)
         {
