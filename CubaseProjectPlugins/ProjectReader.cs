@@ -14,14 +14,24 @@ public class ProjectReader
     /// Initializes a new instance of the <see cref="ProjectReader"/> class.
     /// </summary>
     /// <param name="projectBytes">The binary bytes from a *.cpr Cubase project file.</param>
-    /// <param name="ignoreNames">All plugins which should be ignored.</param>
-    public ProjectReader(byte[] projectBytes, string[] ignoreNames)
+    /// <param name="ignoreGuids">All plugin GUIDs which should be ignored.</param>
+    /// <param name="ignoreNames">All plugin names which should be ignored.</param>
+    public ProjectReader(
+        byte[] projectBytes, string[]? ignoreGuids = null, string[]? ignoreNames = null)
     {
-        IgnoreNames = ignoreNames;
+        IgnoreGuids = ignoreGuids ?? Array.Empty<string>();
+        IgnoreNames = ignoreNames ?? Array.Empty<string>();
 
         _projectBytes = projectBytes;
         _index = 0;
     }
+
+    /// <summary>
+    /// Gets or sets all plugin GUIDs that should not captured.  Typically this will be the plugins
+    /// which are included in Cubase itself.  This is a more accurate way of excluding plugins
+    /// than using their name.
+    /// </summary>
+    public string[] IgnoreGuids { get; set; }
 
     /// <summary>
     /// Gets or sets all plugin names that should not captured.  Typically this will be the plugins
@@ -39,7 +49,7 @@ public class ProjectReader
         byte[] appVersionSearchTerm = Encoding.ASCII.GetBytes("PAppVersion\0");
 
         // Find every byte that's the letter P.
-        SortedSet<string> plugins = new();
+        SortedSet<Plugin> plugins = new();
         string cubaseApplication = "Cubase";
         string cubaseVersion = "Unknown";
         string cubaseReleaseDate = "Unknown";
@@ -115,11 +125,12 @@ public class ProjectReader
                     _index = i + pluginUidSearchTerm.Length + 22;
 
                     string key;
+                    string guid;
                     string name;
 
                     try
                     {
-                        _ = GetToken(); // GUID
+                        guid = GetToken();
                     }
                     catch (IndexOutOfRangeException)
                     {
@@ -175,13 +186,19 @@ public class ProjectReader
                         }
                     }
 
+                    // Skip GUIDs that are to be ignored.
+                    if (IgnoreGuids.Contains(guid))
+                    {
+                        continue;
+                    }
+
                     // Skip names that are to be ignored.
                     if (IgnoreNames.Contains(name))
                     {
                         continue;
                     }
 
-                    plugins.Add(name);
+                    plugins.Add(new Plugin(guid, name));
                     continue;
                 }
             }

@@ -18,7 +18,7 @@
             string cubaseVersion,
             string cubaseReleaseDate,
             string architecture,
-            SortedSet<string> plugins)
+            SortedSet<Plugin> plugins)
         {
             CubaseApplication = cubaseApplication;
             CubaseVersion = cubaseVersion;
@@ -48,8 +48,8 @@
         public string Architecture { get; set; }
 
         /// <summary>
-        /// Gets or sets all the plugin names used in the project.
+        /// Gets or sets all the plugins used in the project.
         /// </summary>
-        public SortedSet<string> Plugins { get; set; }
+        public SortedSet<Plugin> Plugins { get; set; }
     }
 }
