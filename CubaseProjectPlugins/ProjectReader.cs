@@ -14,13 +14,13 @@ public class ProjectReader
     /// Initializes a new instance of the <see cref="ProjectReader"/> class.
     /// </summary>
     /// <param name="projectBytes">The binary bytes from a *.cpr Cubase project file.</param>
-    /// <param name="ignoreGuids">All plugin GUIDs which should be ignored.</param>
-    /// <param name="ignoreNames">All plugin names which should be ignored.</param>
+    /// <param name="guidIgnores">All plugin GUIDs which should be ignored.</param>
+    /// <param name="nameIgnores">All plugin names which should be ignored.</param>
     public ProjectReader(
-        byte[] projectBytes, string[]? ignoreGuids = null, string[]? ignoreNames = null)
+        byte[] projectBytes, string[]? guidIgnores = null, string[]? nameIgnores = null)
     {
-        IgnoreGuids = ignoreGuids ?? Array.Empty<string>();
-        IgnoreNames = ignoreNames ?? Array.Empty<string>();
+        GuidIgnores = guidIgnores ?? Array.Empty<string>();
+        NameIgnores = nameIgnores ?? Array.Empty<string>();
 
         _projectBytes = projectBytes;
         _index = 0;
@@ -31,13 +31,13 @@ public class ProjectReader
     /// which are included in Cubase itself.  This is a more accurate way of excluding plugins
     /// than using their name.
     /// </summary>
-    public string[] IgnoreGuids { get; set; }
+    public string[] GuidIgnores { get; set; }
 
     /// <summary>
     /// Gets or sets all plugin names that should not captured.  Typically this will be the plugins
     /// which are included in Cubase itself.
     /// </summary>
-    public string[] IgnoreNames { get; set; }
+    public string[] NameIgnores { get; set; }
 
     /// <summary>
     /// Obtains all project details including Cubase version and plugins used.
@@ -187,13 +187,13 @@ public class ProjectReader
                     }
 
                     // Skip GUIDs that are to be ignored.
-                    if (IgnoreGuids.Contains(guid))
+                    if (GuidIgnores.Contains(guid))
                     {
                         continue;
                     }
 
                     // Skip names that are to be ignored.
-                    if (IgnoreNames.Contains(name))
+                    if (NameIgnores.Contains(name))
                     {
                         continue;
                     }
