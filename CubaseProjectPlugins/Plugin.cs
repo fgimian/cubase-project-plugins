@@ -38,6 +38,11 @@ public class Plugin : IComparable<Plugin>
             return 1;
         }
 
-        return Guid.CompareTo(other.Guid);
+        if (Guid == other.Guid)
+        {
+            return 0;
+        }
+
+        return Name.CompareTo(other.Name);
     }
 }
