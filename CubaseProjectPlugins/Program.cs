@@ -66,7 +66,7 @@ public static class Program
             bool skip = false;
             foreach (string pathIgnorePattern in config.PathIgnorePatterns)
             {
-                if (projectPath.Contains(pathIgnorePattern))
+                if (pathIgnorePattern.Replace('/', '\\').WildcardMatch(projectPath))
                 {
                     skip = true;
                     break;
