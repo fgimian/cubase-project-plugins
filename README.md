@@ -23,6 +23,11 @@ path_ignore_patterns = [
     "*/Ignore Path 2/*",
 ]
 
+[projects]
+# Specify which project architectures will be included in the output.
+report_32_bit = true
+report_64_bit = true
+
 [plugins]
 # Plugin GUIDs to ignore and exclude from output.
 guid_ignores = [

@@ -94,6 +94,16 @@ public static class Program
                     is64Bit = true;
                 }
 
+                if (is64Bit && !config.Projects.Report64Bit)
+                {
+                    continue;
+                }
+
+                if (!is64Bit && !config.Projects.Report32Bit)
+                {
+                    continue;
+                }
+
                 Console.WriteLine();
                 Console.WriteLine(
                     $"{projectPath} [{details.CubaseApplication} {details.CubaseVersion}] " +
@@ -174,10 +184,10 @@ public static class Program
             }
         }
 
-        if (pluginsAll.Count > 0)
+        if (pluginsAll.Count > 0 && config.Projects.Report32Bit && config.Projects.Report64Bit)
         {
             Console.WriteLine();
-            Console.WriteLine("Summary of Used Plugins in All Projects");
+            Console.WriteLine("Summary of Used Plugins in all Projects");
             Console.WriteLine();
 
             foreach (KeyValuePair<Plugin, int> entry in pluginsAll.OrderBy(p => p.Key.Name))

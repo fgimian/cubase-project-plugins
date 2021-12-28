@@ -1,6 +1,42 @@
 ﻿namespace CubaseProjectPlugins;
 
 /// <summary>
+/// Project specific configuration for the tool.
+/// </summary>
+public class ProjectConfig
+{
+    /// <summary>
+    /// Initializes a new instance of the <see cref="ProjectConfig"/> class.
+    /// </summary>
+    public ProjectConfig()
+    {
+    }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="ProjectConfig"/> class.
+    /// </summary>
+    /// <param name="report32Bit">Whether or not to include 32-bit projects in output.</param>
+    /// <param name="report64Bit">Whether or not to include 64-bit projects in output.</param>
+    public ProjectConfig(bool report32Bit, bool report64Bit)
+    {
+        Report32Bit = report32Bit;
+        Report64Bit = report64Bit;
+    }
+
+    /// <summary>
+    /// Gets or sets a value indicating whether 32-bit projects should be reported.
+    /// </summary>
+    [TomlProperty("report_32_bit")]
+    public bool Report32Bit { get; set; } = true;
+
+    /// <summary>
+    ///  Gets or sets a value indicating whether 64-bit projects should be reported.
+    /// </summary>
+    [TomlProperty("report_64_bit")]
+    public bool Report64Bit { get; set; } = true;
+}
+
+/// <summary>
 /// Plugin specific configuration for the tool.
 /// </summary>
 public class PluginConfig
@@ -64,6 +100,12 @@ public class Config
     /// </summary>
     [TomlProperty("path_ignore_patterns")]
     public string[] PathIgnorePatterns { get; set; } = Array.Empty<string>();
+
+    /// <summary>
+    /// Gets or sets configuration related to projects.
+    /// </summary>
+    [TomlProperty("projects")]
+    public ProjectConfig Projects { get; set; } = new();
 
     /// <summary>
     /// Gets or sets configuration related to plugins.
