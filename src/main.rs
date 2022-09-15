@@ -1,14 +1,20 @@
 mod cstring_extras;
 mod models;
 mod reader;
-use std::env;
-
+use crate::models::cli::Cli;
+use clap::Parser;
 use reader::Reader;
 
 fn main() {
-    let path = env::args().nth(1).unwrap();
-    let data = std::fs::read(path).unwrap();
-    let reader = Reader::new(data);
-    let project_details = reader.get_project_details();
-    println!("{:#?}", project_details);
+    let cli = Cli::parse();
+
+    for project_path in cli.project_paths {
+        let data = std::fs::read(project_path.clone()).unwrap();
+        let reader = Reader::new(data);
+        let project_details = reader.get_project_details();
+
+        println!("{}", project_path);
+        println!("{:#?}", project_details);
+        println!();
+    }
 }
