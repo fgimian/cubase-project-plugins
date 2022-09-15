@@ -22,10 +22,6 @@ pub struct Reader {
 }
 
 impl Reader {
-    /// Initializes a new instance of the <see cref="ProjectReader"/> class.
-    /// <param name="project_bytes">The binary bytes from a *.cpr Cubase project file.</param>
-    /// <param name="guidIgnores">All plugin GUIDs which should be ignored.</param>
-    /// <param name="nameIgnores">All plugin names which should be ignored.</param>
     pub fn new(project_bytes: Vec<u8>) -> Reader {
         Reader {
             guid_ignores: Vec::new(),
@@ -35,7 +31,6 @@ impl Reader {
     }
 
     /// Obtains all project details including Cubase version and plugins used.
-    // /// <returns>An instance of <see cref="ProjectDetails"/>containing project details.</returns>
     pub fn get_project_details(&self) -> ProjectDetails {
         let mut metadata = ProjectMetadata {
             application: String::from("Cubase"),
