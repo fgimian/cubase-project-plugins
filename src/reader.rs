@@ -40,57 +40,56 @@ impl Reader {
         };
         let mut plugins = HashSet::new();
 
-        for (index, &byte) in self.project_bytes.iter().enumerate() {
-            if char::from(byte) != 'P' {
+        let mut index: usize = 0;
+
+        while index < self.project_bytes.len() {
+            if char::from(self.project_bytes[index]) != 'P' {
+                index += 1;
                 continue;
             }
 
-            // Check that the next set of bytes related to the Cubase version.
-            if let Some(found_metadata) = self.search_metadata(index) {
+            if let Some(found_metadata) = self.search_metadata(&mut index) {
                 metadata = found_metadata;
-            }
-
-            // Check that the next set of bytes relate to a plugin.
-            if let Some(found_plugin) = self.search_plugin(index) {
-                // Skip GUIDs that are to be ignored.
-                if self.guid_ignores.contains(&found_plugin.guid) {
-                    continue;
-                }
-
-                // Skip names that are to be ignored.
-                if self.name_ignores.contains(&found_plugin.name) {
+            } else if let Some(found_plugin) = self.search_plugin(&mut index) {
+                if self.guid_ignores.contains(&found_plugin.guid)
+                    || self.name_ignores.contains(&found_plugin.name)
+                {
                     continue;
                 }
 
                 plugins.insert(found_plugin);
+            } else {
+                index += 1;
             }
         }
 
         ProjectDetails { metadata, plugins }
     }
 
-    fn search_metadata(&self, index: usize) -> Option<ProjectMetadata> {
-        let mut current_index = index;
+    fn search_metadata(&self, index: &mut usize) -> Option<ProjectMetadata> {
+        let mut read_index = *index;
 
         let version_term =
-            self.get_token_bytes_with_len(&mut current_index, APP_VERSION_SEARCH_TERM.len())?;
+            self.get_token_bytes_with_len(&mut read_index, APP_VERSION_SEARCH_TERM.len())?;
 
         if version_term != APP_VERSION_SEARCH_TERM {
             return None;
         }
 
-        current_index += APP_VERSION_SEARCH_TERM.len() + 9;
-        let application = self.get_token(&mut current_index)?;
-        current_index += 3;
-        let version = self.get_token(&mut current_index)?;
-        current_index += 3;
-        let release_date = self.get_token(&mut current_index)?;
-        current_index += 7;
+        read_index += APP_VERSION_SEARCH_TERM.len() + 9;
+        let application = self.get_token(&mut read_index)?;
+        read_index += 3;
+        let version = self.get_token(&mut read_index)?;
+        read_index += 3;
+        let release_date = self.get_token(&mut read_index)?;
+        read_index += 7;
         // Older 32-bit versions of Cubase didn't list the architecture in the project file.
-        let architecture = match self.get_token(&mut current_index) {
+        let architecture = match self.get_token(&mut read_index) {
             Some(architecture) => architecture,
             None => String::from("Not Specified"),
         };
+
+        *index = read_index;
 
         Some(ProjectMetadata {
             application,
@@ -100,62 +99,65 @@ impl Reader {
         })
     }
 
-    fn search_plugin(&self, index: usize) -> Option<ProjectPlugin> {
-        let mut current_index = index;
+    fn search_plugin(&self, index: &mut usize) -> Option<ProjectPlugin> {
+        let mut read_index = *index;
 
         let uid_term =
-            self.get_token_bytes_with_len(&mut current_index, PLUGIN_UID_SEARCH_TERM.len())?;
+            self.get_token_bytes_with_len(&mut read_index, PLUGIN_UID_SEARCH_TERM.len())?;
 
         if uid_term != PLUGIN_UID_SEARCH_TERM {
             return None;
         }
 
-        current_index += PLUGIN_UID_SEARCH_TERM.len() + 22;
-        let guid = self.get_token(&mut current_index)?;
-        current_index += 3;
+        read_index += PLUGIN_UID_SEARCH_TERM.len() + 22;
+        let guid = self.get_token(&mut read_index)?;
+        read_index += 3;
 
         let mut key: String;
 
-        key = self.get_token(&mut current_index)?;
+        key = self.get_token(&mut read_index)?;
         if key != "Plugin Name" {
             return None;
         }
-        current_index += 5;
+        read_index += 5;
 
-        let mut name = self.get_token(&mut current_index)?;
-        current_index += 3;
-        key = self.get_token(&mut current_index)?;
+        let mut name = self.get_token(&mut read_index)?;
+        read_index += 3;
+        key = self.get_token(&mut read_index)?;
         if key == "Original Plugin Name" {
-            current_index += 5;
-            name = match self.get_token(&mut current_index) {
+            read_index += 5;
+            name = match self.get_token(&mut read_index) {
                 Some(original_name) => original_name,
                 None => name,
             };
         }
 
+        *index = read_index;
+
         Some(ProjectPlugin { guid, name })
     }
 
-    fn get_token_bytes_with_len(&self, current_index: &mut usize, len: usize) -> Option<Vec<u8>> {
-        let end = *current_index + len;
+    fn get_token_bytes_with_len(&self, read_index: &mut usize, len: usize) -> Option<Vec<u8>> {
+        let end = *read_index + len;
         if end > self.project_bytes.len() {
             return None;
         }
 
-        let token_bytes = &self.project_bytes[*current_index..end];
+        let token_bytes = &self.project_bytes[*read_index..end];
         Some(token_bytes.to_vec())
     }
 
-    fn get_token(&self, current_index: &mut usize) -> Option<String> {
-        let len = usize::from(self.project_bytes[*current_index]);
-        *current_index += 1;
+    fn get_token(&self, read_index: &mut usize) -> Option<String> {
+        let len = usize::from(self.project_bytes[*read_index]);
+        *read_index += 1;
 
-        let token_bytes = self.get_token_bytes_with_len(current_index, len)?;
-        *current_index += len;
-
-        cstring_extras::from_vec_until_nul(token_bytes.to_vec())
+        let token_bytes = self.get_token_bytes_with_len(read_index, len)?;
+        let token = cstring_extras::from_vec_until_nul(token_bytes.to_vec())
             .ok()?
             .into_string()
-            .ok()
+            .ok()?;
+        *read_index += len;
+
+        Some(token)
     }
 }
