@@ -1,17 +1,11 @@
 use serde::Deserialize;
 
-fn report_default() -> bool {
-    true
-}
-
 /// Project specific configuration for the tool.
 #[derive(Debug, Deserialize)]
 pub struct ProjectsConfig {
     /// Indicates whether 32-bit projects should be reported.
-    #[serde(default = "report_default")]
     pub report_32_bit: bool,
     /// Indicates whether 64-bit projects should be reported.
-    #[serde(default = "report_default")]
     pub report_64_bit: bool,
 }
 
@@ -33,4 +27,20 @@ pub struct Config {
     pub projects: ProjectsConfig,
     /// Configuration related to plugins.
     pub plugins: PluginsConfig,
+}
+
+impl Config {
+    pub fn new() -> Config {
+        Config {
+            path_ignore_patterns: Vec::new(),
+            projects: ProjectsConfig {
+                report_32_bit: true,
+                report_64_bit: true,
+            },
+            plugins: PluginsConfig {
+                guid_ignores: Vec::new(),
+                name_ignores: Vec::new(),
+            },
+        }
+    }
 }
