@@ -63,16 +63,17 @@ fn main() {
         }
     }
 
-    let path_spec = ColorSpec::new()
-        .set_bg(Some(Color::Red))
-        .set_fg(Some(Color::White))
-        .clone();
-    let project_spec = ColorSpec::new().set_fg(Some(Color::Blue)).clone();
+    let mut path_spec = ColorSpec::new();
+    path_spec.set_bg(Some(Color::Red));
+    path_spec.set_fg(Some(Color::White));
+
+    let mut project_spec = ColorSpec::new();
+    project_spec.set_fg(Some(Color::Blue));
 
     let mut stdout = StandardStream::stdout(ColorChoice::Always);
 
     for project_file_path in project_file_paths {
-        let data = std::fs::read(project_file_path.clone()).unwrap();
+        let data = std::fs::read(&project_file_path).unwrap();
         let reader = Reader::new(data);
         let project_details = reader.get_project_details();
 
