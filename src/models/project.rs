@@ -2,7 +2,7 @@ use std::collections::HashSet;
 
 /// Contains information about the Cubase version used to create the project
 #[derive(Debug, Eq, PartialEq, Hash)]
-pub struct ProjectMetadata {
+pub struct Metadata {
     /// The Cubase application name.
     pub application: String,
 
@@ -18,7 +18,7 @@ pub struct ProjectMetadata {
 
 /// Represents a plugin within a Cubase project.
 #[derive(Debug, Eq, PartialEq, Hash)]
-pub struct ProjectPlugin {
+pub struct Plugin {
     /// The globally unique identifier for the plugin.
     pub guid: String,
 
@@ -28,10 +28,10 @@ pub struct ProjectPlugin {
 
 /// Captures the Cubase version and all plugins used for a Cubase project.
 #[derive(Debug)]
-pub struct ProjectDetails {
+pub struct Project {
     /// Information about the Cubase version used to create the project.
-    pub metadata: ProjectMetadata,
+    pub metadata: Metadata,
 
     /// All the plugins used in the project.
-    pub plugins: HashSet<ProjectPlugin>,
+    pub plugins: HashSet<Plugin>,
 }

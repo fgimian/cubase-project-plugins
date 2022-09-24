@@ -2,8 +2,12 @@
 name = "cubase-project-plugins"
 version = "0.1.0"
 edition = "2021"
-
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+description = "Determines which plugins are used in your Cubase projects. "
+repository = "https://github.com/fgimian/cubase-project-plugins.rs"
+readme = "README.md"
+license = "MIT"
+keywords = ["cubase"]
+categories = ["command-line-interface"]
 
 [dependencies]
 clap = { version = "3.2.21", features = ["derive"] }

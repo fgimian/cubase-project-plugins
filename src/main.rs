@@ -1,3 +1,11 @@
+#![warn(
+    clippy::all,
+    clippy::pedantic,
+    clippy::nursery,
+    clippy::cargo,
+    clippy::expect_used,
+    clippy::unwrap_used
+)]
 mod cstring_extras;
 mod models;
 mod reader;
@@ -42,7 +50,7 @@ fn main() {
                 require_literal_leading_dot: false,
             },
         ) {
-            let filtered_paths = paths.filter_map(|p| p.ok()).filter(|p| {
+            let filtered_paths = paths.filter_map(Result::ok).filter(|p| {
                 !path_ignore_globs
                     .iter()
                     .any(|g| match p.clone().into_os_string().into_string() {
@@ -58,8 +66,8 @@ fn main() {
     let path_spec = ColorSpec::new()
         .set_bg(Some(Color::Red))
         .set_fg(Some(Color::White))
-        .to_owned();
-    let project_spec = ColorSpec::new().set_fg(Some(Color::Blue)).to_owned();
+        .clone();
+    let project_spec = ColorSpec::new().set_fg(Some(Color::Blue)).clone();
 
     let mut stdout = StandardStream::stdout(ColorChoice::Always);
 

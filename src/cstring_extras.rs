@@ -16,7 +16,7 @@ pub fn from_vec_until_nul(v: Vec<u8>) -> Result<CString, FromVecUntilNulError> {
     let nul_pos = memchr::memchr(0, &v);
     match nul_pos {
         Some(nul_pos) => {
-            let subslice = v[..nul_pos + 1].to_vec();
+            let subslice = v[..=nul_pos].to_vec();
             // SAFETY: We know there is a nul byte at nul_pos, so this slice
             // (ending at the nul byte) is a well-formed C string.
             Ok(unsafe { CString::from_vec_with_nul_unchecked(subslice) })
