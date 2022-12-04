@@ -6,17 +6,21 @@
     clippy::expect_used,
     clippy::unwrap_used
 )]
+
 mod cstring_extras;
 mod models;
 mod reader;
-use crate::models::cli::Cli;
+
+use std::io::Write;
+use std::{fs, path::Path};
+
 use clap::Parser;
 use glob::{glob_with, MatchOptions, Pattern};
 use models::config::Config;
 use reader::Reader;
-use std::io::Write;
-use std::{fs, path::Path};
 use termcolor::{Color, ColorChoice, ColorSpec, StandardStream, WriteColor};
+
+use crate::models::cli::Cli;
 
 fn main() {
     let cli = Cli::parse();

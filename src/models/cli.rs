@@ -1,5 +1,6 @@
-use clap::Parser;
 use std::path::PathBuf;
+
+use clap::Parser;
 
 /// Obtains information and download links for Native Instruments products
 #[derive(Parser, Debug)]

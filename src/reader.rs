@@ -1,6 +1,7 @@
+use std::collections::HashSet;
+
 use crate::cstring_extras;
 use crate::models::project::{Metadata, Plugin, Project};
-use std::collections::HashSet;
 
 const PLUGIN_UID_SEARCH_TERM: &[u8] = b"Plugin UID\0";
 const APP_VERSION_SEARCH_TERM: &[u8] = b"PAppVersion\0";
