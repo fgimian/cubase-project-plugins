@@ -7,10 +7,10 @@ use clap::Parser;
 #[clap(author, version, about, long_about = None)]
 pub struct Cli {
     /// Set the directory paths to search for Cubase projects.
-    #[clap(name = "project-path", short, long, value_parser, value_name = "PATH")]
+    #[clap(value_name = "PROJECT_PATH")]
     pub project_paths: Vec<String>,
 
-    /// Set the config file path
-    #[clap(short, long, value_parser, value_name = "PATH")]
+    /// Set the config file path.
+    #[clap(short, long, value_name = "PATH")]
     pub config: Option<PathBuf>,
 }
