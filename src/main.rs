@@ -4,7 +4,7 @@
     clippy::nursery,
     clippy::cargo,
     clippy::expect_used,
-    clippy::unwrap_used
+    // clippy::unwrap_used
 )]
 
 mod cstring_extras;
@@ -25,19 +25,16 @@ use crate::models::cli::Cli;
 fn main() {
     let cli = Cli::parse();
 
-    let config: Config = match cli.config {
-        Some(config_path) => {
-            let config_string = fs::read_to_string(config_path).unwrap();
-            toml::from_str(&config_string).unwrap()
-        }
-        None => Config::new(),
-    };
+    let config = cli.config.map_or_else(Config::new, |config_path| {
+        let config_string = fs::read_to_string(config_path).unwrap();
+        toml::from_str(&config_string).unwrap()
+    });
 
-    let path_ignore_globs: Vec<Pattern> = config
+    let path_ignore_globs = config
         .path_ignore_patterns
         .iter()
         .map(|p| Pattern::new(p).unwrap())
-        .collect();
+        .collect::<Vec<Pattern>>();
 
     let mut project_file_paths = Vec::new();
 
@@ -55,12 +52,12 @@ fn main() {
             },
         ) {
             let filtered_paths = paths.filter_map(Result::ok).filter(|p| {
-                !path_ignore_globs
-                    .iter()
-                    .any(|g| match p.clone().into_os_string().into_string() {
-                        Ok(path) => g.matches(&path),
-                        Err(_) => true,
-                    })
+                !path_ignore_globs.iter().any(|g| {
+                    p.clone()
+                        .into_os_string()
+                        .into_string()
+                        .map_or(true, |path| g.matches(&path))
+                })
             });
 
             project_file_paths.extend(filtered_paths);

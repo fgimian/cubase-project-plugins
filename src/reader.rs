@@ -41,7 +41,7 @@ impl Reader {
         };
         let mut plugins = HashSet::new();
 
-        let mut index: usize = 0;
+        let mut index = 0;
         while index < self.project_bytes.len() {
             if char::from(self.project_bytes[index]) != 'P' {
                 index += 1;
@@ -154,7 +154,7 @@ impl Reader {
     fn get_token(&self, index: usize) -> Option<(String, usize)> {
         let len = usize::from(self.project_bytes[index]);
         let token_bytes = self.get_bytes(index + 1, len)?;
-        let token = cstring_extras::from_vec_until_nul(token_bytes)
+        let token = cstring_extras::from_vec_until_nul(&token_bytes)
             .ok()?
             .into_string()
             .ok()?;
