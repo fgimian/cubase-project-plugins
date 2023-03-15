@@ -11,6 +11,7 @@ mod cstring_extras;
 mod models;
 mod reader;
 
+use std::collections::HashMap;
 use std::io::Write;
 use std::{fs, path::Path};
 
@@ -64,12 +65,16 @@ fn main() {
         }
     }
 
-    let mut path_spec = ColorSpec::new();
-    path_spec.set_bg(Some(Color::Red));
-    path_spec.set_fg(Some(Color::White));
+    let mut heading_spec = ColorSpec::new();
+    heading_spec.set_bg(Some(Color::Red));
+    heading_spec.set_fg(Some(Color::White));
 
     let mut project_spec = ColorSpec::new();
     project_spec.set_fg(Some(Color::Blue));
+
+    let mut plugin_counts = HashMap::new();
+    let mut plugin_counts_32 = HashMap::new();
+    let mut plugin_counts_64 = HashMap::new();
 
     let mut stdout = StandardStream::stdout(ColorChoice::Always);
 
@@ -90,7 +95,7 @@ fn main() {
         }
 
         println!();
-        stdout.set_color(&path_spec).unwrap();
+        stdout.set_color(&heading_spec).unwrap();
         write!(
             &mut stdout,
             "Path: {}",
@@ -100,6 +105,7 @@ fn main() {
         stdout.reset().unwrap();
         println!();
         println!();
+
         stdout.set_color(&project_spec).unwrap();
         write!(
             &mut stdout,
@@ -122,8 +128,73 @@ fn main() {
                 .filter(|p| !config.plugins.guid_ignores.contains(&p.guid))
                 .filter(|p| !config.plugins.name_ignores.contains(&p.name))
             {
+                plugin_counts
+                    .entry(plugin.clone())
+                    .and_modify(|count| *count += 1)
+                    .or_insert(1);
+
+                if is_64_bit {
+                    plugin_counts_64
+                        .entry(plugin.clone())
+                        .and_modify(|count| *count += 1)
+                        .or_insert(1);
+                } else {
+                    plugin_counts_32
+                        .entry(plugin.clone())
+                        .and_modify(|count| *count += 1)
+                        .or_insert(1);
+                }
+
                 println!("    > {} : {}", plugin.guid, plugin.name);
             }
+        }
+    }
+
+    if !plugin_counts_32.is_empty() {
+        println!();
+        stdout.set_color(&heading_spec).unwrap();
+        write!(&mut stdout, "Summary: Plugins Used In 32-bit Projects",).unwrap();
+        stdout.reset().unwrap();
+        println!();
+        println!();
+
+        let mut sorted_plugin_counts_32 = Vec::from_iter(plugin_counts_32);
+        sorted_plugin_counts_32.sort_by(|a, b| a.0.name.cmp(&b.0.name));
+
+        for (plugin, count) in &sorted_plugin_counts_32 {
+            println!("    > {} : {} ({})", plugin.guid, plugin.name, count);
+        }
+    }
+
+    if !plugin_counts_64.is_empty() {
+        println!();
+        stdout.set_color(&heading_spec).unwrap();
+        write!(&mut stdout, "Summary: Plugins Used In 64-bit Projects",).unwrap();
+        stdout.reset().unwrap();
+        println!();
+        println!();
+
+        let mut sorted_plugin_counts_64 = Vec::from_iter(plugin_counts_64);
+        sorted_plugin_counts_64.sort_by(|a, b| a.0.name.cmp(&b.0.name));
+
+        for (plugin, count) in &sorted_plugin_counts_64 {
+            println!("    > {} : {} ({})", plugin.guid, plugin.name, count);
+        }
+    }
+
+    if !plugin_counts.is_empty() {
+        println!();
+        stdout.set_color(&heading_spec).unwrap();
+        write!(&mut stdout, "Summary: Plugins Used In All Projects",).unwrap();
+        stdout.reset().unwrap();
+        println!();
+        println!();
+
+        let mut sorted_plugin_counts = Vec::from_iter(plugin_counts);
+        sorted_plugin_counts.sort_by(|a, b| a.0.name.cmp(&b.0.name));
+
+        for (plugin, count) in &sorted_plugin_counts {
+            println!("    > {} : {} ({})", plugin.guid, plugin.name, count);
         }
     }
 }

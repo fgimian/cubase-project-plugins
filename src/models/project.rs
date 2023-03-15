@@ -17,7 +17,7 @@ pub struct Metadata {
 }
 
 /// Represents a plugin within a Cubase project.
-#[derive(Debug, Eq, PartialEq, Hash)]
+#[derive(Debug, Eq, PartialEq, Hash, Clone)]
 pub struct Plugin {
     /// The globally unique identifier for the plugin.
     pub guid: String,
