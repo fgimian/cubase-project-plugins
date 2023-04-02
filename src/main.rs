@@ -153,7 +153,7 @@ fn main() {
     if !plugin_counts_32.is_empty() {
         println!();
         stdout.set_color(&heading_spec).unwrap();
-        write!(&mut stdout, "Summary: Plugins Used In 32-bit Projects",).unwrap();
+        write!(&mut stdout, "Summary: Plugins Used In 32-bit Projects").unwrap();
         stdout.reset().unwrap();
         println!();
         println!();

@@ -2,7 +2,8 @@ use std::path::PathBuf;
 
 use clap::Parser;
 
-/// Obtains information and download links for Native Instruments products
+/// Displays all plugins used in your Cubase projects along with the Cubase version the project
+/// was created with.
 #[derive(Parser, Debug)]
 #[command(author, version, about, long_about = None)]
 pub struct Cli {
