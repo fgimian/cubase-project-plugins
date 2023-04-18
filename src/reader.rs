@@ -141,14 +141,14 @@ impl Reader {
         Some((Plugin { guid, name }, read_index))
     }
 
-    fn get_bytes(&self, index: usize, len: usize) -> Option<Vec<u8>> {
+    fn get_bytes(&self, index: usize, len: usize) -> Option<&[u8]> {
         let end = index + len;
         if end > self.project_bytes.len() {
             return None;
         }
 
         let buffer = &self.project_bytes[index..end];
-        Some(buffer.to_vec())
+        Some(buffer)
     }
 
     fn get_token(&self, index: usize) -> Option<(String, usize)> {
@@ -156,7 +156,7 @@ impl Reader {
         let len = usize::from(len_bytes[0]);
 
         let token_bytes = self.get_bytes(index + 1, len)?;
-        let token = cstring_extras::from_vec_until_nul(&token_bytes)
+        let token = cstring_extras::from_vec_until_nul(token_bytes)
             .ok()?
             .into_string()
             .ok()?;
