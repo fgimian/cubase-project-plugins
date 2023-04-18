@@ -9,26 +9,13 @@ const APP_VERSION_SEARCH_TERM: &[u8] = b"PAppVersion\0";
 /// Determines the used plugins in a Cubase project along with related version of Cubase which the
 /// project was created on by parsing the binary in a *.cpr file.
 pub struct Reader {
-    /// All plugin GUIDs that should not captured.  Typically this will be the plugins which are
-    /// included in Cubase itself.  This is a more accurate way of excluding plugins than usin
-    /// their name.
-    pub guid_ignores: Vec<String>,
-
-    /// All plugin names that should not captured.  Typically this will be the plugins
-    /// which are included in Cubase itself.
-    pub name_ignores: Vec<String>,
-
     /// The binary Cubase project bytes.
     project_bytes: Vec<u8>,
 }
 
 impl Reader {
     pub fn new(project_bytes: Vec<u8>) -> Self {
-        Self {
-            guid_ignores: Vec::new(),
-            name_ignores: Vec::new(),
-            project_bytes,
-        }
+        Self { project_bytes }
     }
 
     /// Obtains all project details including Cubase version and plugins used.
@@ -49,15 +36,8 @@ impl Reader {
                 metadata = found_metadata;
                 index = updated_index;
             } else if let Some((found_plugin, updated_index)) = self.search_plugin(index) {
-                index = updated_index;
-
-                if self.guid_ignores.contains(&found_plugin.guid)
-                    || self.name_ignores.contains(&found_plugin.name)
-                {
-                    continue;
-                }
-
                 plugins.insert(found_plugin);
+                index = updated_index;
             } else {
                 index += 1;
             }
