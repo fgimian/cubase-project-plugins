@@ -7,7 +7,6 @@
     // clippy::unwrap_used
 )]
 
-mod cstring_extras;
 mod models;
 mod reader;
 

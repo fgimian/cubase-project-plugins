@@ -1,6 +1,6 @@
 use std::collections::HashSet;
+use std::ffi::CStr;
 
-use crate::cstring_extras;
 use crate::models::project::{Metadata, Plugin, Project};
 
 const PLUGIN_UID_SEARCH_TERM: &[u8] = b"Plugin UID\0";
@@ -30,12 +30,16 @@ impl Reader {
 
         let mut index = 0;
         while index < self.project_bytes.len() {
+            // Check if the current byte matches the letter P which is the first letter of all our
+            // search terms.
             if char::from(self.project_bytes[index]) != 'P' {
                 index += 1;
             } else if let Some((found_metadata, updated_index)) = self.search_metadata(index) {
+                // Check whether the next set of bytes are related to the Cubase version.
                 metadata = found_metadata;
                 index = updated_index;
             } else if let Some((found_plugin, updated_index)) = self.search_plugin(index) {
+                // Check whether the next set of bytes relate to a plugin.
                 plugins.insert(found_plugin);
                 index = updated_index;
             } else {
@@ -109,13 +113,10 @@ impl Reader {
         if key == "Original Plugin Name" {
             read_index += len + 5;
 
-            name = match self.get_token(read_index) {
-                Some((original_name, len)) => {
-                    read_index += len;
-                    original_name
-                }
-                None => name,
-            };
+            if let Some((original_name, len)) = self.get_token(read_index) {
+                read_index += len;
+                name = original_name;
+            }
         }
 
         Some((Plugin { guid, name }, read_index))
@@ -136,10 +137,11 @@ impl Reader {
         let len = usize::from(len_bytes[0]);
 
         let token_bytes = self.get_bytes(index + 1, len)?;
-        let token = cstring_extras::from_vec_until_nul(token_bytes)
+        let token = CStr::from_bytes_until_nul(token_bytes)
             .ok()?
-            .into_string()
-            .ok()?;
+            .to_str()
+            .ok()?
+            .to_string();
 
         Some((token, len + 1))
     }

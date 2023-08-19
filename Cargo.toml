@@ -10,12 +10,11 @@ keywords = ["cubase"]
 categories = ["command-line-interface"]
 
 [dependencies]
-clap = { version = "4.1.10", features = ["derive"] }
+clap = { version = "4.2.7", features = ["derive"] }
 glob = "0.3.1"
-memchr = "2.5.0"
-serde = { version = "1.0.157", features = ["derive"] }
+serde = { version = "1.0.183", features = ["derive"] }
 termcolor = "1.2.0"
-toml = "0.7.3"
+toml = "0.7.6"
 
 [profile.release]
 lto = true
