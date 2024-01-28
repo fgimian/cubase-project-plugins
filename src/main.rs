@@ -15,16 +15,15 @@ mod reader;
 
 use std::collections::HashMap;
 use std::fs::File;
-use std::io;
-use std::io::{Read, Write};
+use std::io::Read;
 use std::{fs, path::Path};
 
 use clap::Parser;
+use colored::Colorize;
 use config::Config;
 use glob::{glob_with, MatchOptions, Pattern};
 use project::Plugin;
 use reader::Reader;
-use termcolor::{Color, ColorChoice, ColorSpec, StandardStream, WriteColor};
 
 use cli::Cli;
 
@@ -70,15 +69,6 @@ fn main() {
         }
     }
 
-    let mut heading_spec = ColorSpec::new();
-    heading_spec.set_bg(Some(Color::Red));
-    heading_spec.set_fg(Some(Color::White));
-
-    let mut project_spec = ColorSpec::new();
-    project_spec.set_fg(Some(Color::Blue));
-
-    let mut stdout = StandardStream::stdout(ColorChoice::Always);
-
     let mut plugin_counts = HashMap::new();
     let mut plugin_counts_32 = HashMap::new();
     let mut plugin_counts_64 = HashMap::new();
@@ -104,29 +94,23 @@ fn main() {
             continue;
         }
 
+        let path_heading = format!("Path: {}", project_file_path.display())
+            .white()
+            .on_red();
+
         println!();
-        stdout.set_color(&heading_spec).unwrap();
-        write!(
-            &mut stdout,
-            "Path: {}",
-            project_file_path.into_os_string().into_string().unwrap(),
-        )
-        .unwrap();
-        stdout.reset().unwrap();
-        println!();
+        println!("{path_heading}");
         println!();
 
-        stdout.set_color(&project_spec).unwrap();
-        write!(
-            &mut stdout,
+        let project_heading = format!(
             "{application} {version} ({architecture})",
             application = project_details.metadata.application,
             version = project_details.metadata.version,
             architecture = project_details.metadata.architecture
         )
-        .unwrap();
-        stdout.reset().unwrap();
-        println!();
+        .blue();
+
+        println!("{project_heading}");
 
         if project_details.plugins.is_empty() {
             continue;
@@ -162,26 +146,22 @@ fn main() {
         }
     }
 
-    print_summary(&plugin_counts_32, "32-bit", &mut stdout, &heading_spec).unwrap();
-    print_summary(&plugin_counts_64, "64-bit", &mut stdout, &heading_spec).unwrap();
-    print_summary(&plugin_counts, "All", &mut stdout, &heading_spec).unwrap();
+    print_summary(&plugin_counts_32, "32-bit");
+    print_summary(&plugin_counts_64, "64-bit");
+    print_summary(&plugin_counts, "All");
 }
 
-fn print_summary(
-    plugin_counts: &HashMap<Plugin, i32>,
-    description: &str,
-    stdout: &mut StandardStream,
-    heading_spec: &ColorSpec,
-) -> io::Result<()> {
+fn print_summary(plugin_counts: &HashMap<Plugin, i32>, description: &str) {
     if plugin_counts.is_empty() {
-        return Ok(());
+        return;
     }
 
+    let summary_heading = format!("Summary: Plugins Used In {description} Projects")
+        .white()
+        .on_red();
+
     println!();
-    stdout.set_color(heading_spec)?;
-    write!(stdout, "Summary: Plugins Used In {description} Projects")?;
-    stdout.reset()?;
-    println!();
+    println!("{summary_heading}");
     println!();
 
     let mut sorted_plugin_counts = Vec::from_iter(plugin_counts);
@@ -190,6 +170,4 @@ fn print_summary(
     for (plugin, count) in &sorted_plugin_counts {
         println!("    > {} : {} ({})", plugin.guid, plugin.name, count);
     }
-
-    Ok(())
 }
