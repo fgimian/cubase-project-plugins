@@ -3,25 +3,25 @@ use serde::Deserialize;
 /// Project specific configuration for the tool.
 #[derive(Debug, Deserialize)]
 pub struct Projects {
-    /// Indicates whether 32-bit projects should be reported.
+    /// Whether 32-bit projects should be reported..
     pub report_32_bit: bool,
-    /// Indicates whether 64-bit projects should be reported.
+    /// Whether 64-bit projects should be reported..
     pub report_64_bit: bool,
 }
 
 /// Plugin specific configuration for the tool.
 #[derive(Debug, Deserialize)]
 pub struct Plugins {
-    /// Plugin GUIDs which are to be ignored.
+    /// Plugin GUIDs which should be ignored.
     pub guid_ignores: Vec<String>,
-    /// Plugin names which are to be ignored.
+    /// Plugin names which should be ignored.
     pub name_ignores: Vec<String>,
 }
 
 /// The main configuration structure for the tool.
 #[derive(Debug, Deserialize)]
 pub struct Config {
-    /// Path patterns which determine which projects are skipped.
+    /// Project path patterns to skip.
     pub path_ignore_patterns: Vec<String>,
     /// Configuration related to projects.
     pub projects: Projects,
@@ -29,8 +29,8 @@ pub struct Config {
     pub plugins: Plugins,
 }
 
-impl Config {
-    pub const fn new() -> Self {
+impl Default for Config {
+    fn default() -> Self {
         Self {
             path_ignore_patterns: Vec::new(),
             projects: Projects {

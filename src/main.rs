@@ -6,26 +6,32 @@
     clippy::expect_used,
     // clippy::unwrap_used
 )]
+#![allow(clippy::too_many_lines)]
 
-mod models;
+mod cli;
+mod config;
+mod project;
 mod reader;
 
 use std::collections::HashMap;
-use std::io::Write;
+use std::fs::File;
+use std::io;
+use std::io::{Read, Write};
 use std::{fs, path::Path};
 
 use clap::Parser;
+use config::Config;
 use glob::{glob_with, MatchOptions, Pattern};
-use models::config::Config;
+use project::Plugin;
 use reader::Reader;
 use termcolor::{Color, ColorChoice, ColorSpec, StandardStream, WriteColor};
 
-use crate::models::cli::Cli;
+use cli::Cli;
 
 fn main() {
     let cli = Cli::parse();
 
-    let config = cli.config.map_or_else(Config::new, |config_path| {
+    let config = cli.config.map_or_else(Config::default, |config_path| {
         let config_string = fs::read_to_string(config_path).unwrap();
         toml::from_str(&config_string).unwrap()
     });
@@ -51,12 +57,12 @@ fn main() {
                 require_literal_leading_dot: false,
             },
         ) {
-            let filtered_paths = paths.filter_map(Result::ok).filter(|p| {
-                !path_ignore_globs.iter().any(|g| {
-                    p.clone()
+            let filtered_paths = paths.filter_map(Result::ok).filter(|path| {
+                !path_ignore_globs.iter().any(|glob| {
+                    path.clone()
                         .into_os_string()
                         .into_string()
-                        .map_or(true, |path| g.matches(&path))
+                        .map_or(true, |path| glob.matches(&path))
                 })
             });
 
@@ -71,16 +77,21 @@ fn main() {
     let mut project_spec = ColorSpec::new();
     project_spec.set_fg(Some(Color::Blue));
 
+    let mut stdout = StandardStream::stdout(ColorChoice::Always);
+
     let mut plugin_counts = HashMap::new();
     let mut plugin_counts_32 = HashMap::new();
     let mut plugin_counts_64 = HashMap::new();
 
-    let mut stdout = StandardStream::stdout(ColorChoice::Always);
+    let mut data = Vec::new();
 
     for project_file_path in project_file_paths {
-        let data = std::fs::read(&project_file_path).unwrap();
-        let reader = Reader::new(data);
-        let project_details = reader.get_project_details();
+        let mut file = File::open(&project_file_path).unwrap();
+        file.read_to_end(&mut data).unwrap();
+
+        let reader = Reader::new(&data);
+        let project_details = reader.get_project_details().unwrap();
+        data.clear();
 
         let is_64_bit = matches!(
             project_details.metadata.architecture.as_str(),
@@ -117,85 +128,68 @@ fn main() {
         stdout.reset().unwrap();
         println!();
 
-        if !project_details.plugins.is_empty() {
-            let mut sorted_plugins = Vec::from_iter(project_details.plugins);
-            sorted_plugins.sort_by(|a, b| a.name.to_lowercase().cmp(&b.name.to_lowercase()));
+        if project_details.plugins.is_empty() {
+            continue;
+        }
 
-            println!();
-            for plugin in sorted_plugins
-                .iter()
-                .filter(|p| !config.plugins.guid_ignores.contains(&p.guid))
-                .filter(|p| !config.plugins.name_ignores.contains(&p.name))
-            {
-                plugin_counts
+        let mut sorted_plugins = Vec::from_iter(project_details.plugins);
+        sorted_plugins.sort_by(|a, b| a.name.to_lowercase().cmp(&b.name.to_lowercase()));
+
+        println!();
+        for plugin in sorted_plugins
+            .iter()
+            .filter(|p| !config.plugins.guid_ignores.contains(&p.guid))
+            .filter(|p| !config.plugins.name_ignores.contains(&p.name))
+        {
+            plugin_counts
+                .entry(plugin.clone())
+                .and_modify(|count| *count += 1)
+                .or_insert(1);
+
+            if is_64_bit {
+                plugin_counts_64
                     .entry(plugin.clone())
                     .and_modify(|count| *count += 1)
                     .or_insert(1);
-
-                if is_64_bit {
-                    plugin_counts_64
-                        .entry(plugin.clone())
-                        .and_modify(|count| *count += 1)
-                        .or_insert(1);
-                } else {
-                    plugin_counts_32
-                        .entry(plugin.clone())
-                        .and_modify(|count| *count += 1)
-                        .or_insert(1);
-                }
-
-                println!("    > {} : {}", plugin.guid, plugin.name);
+            } else {
+                plugin_counts_32
+                    .entry(plugin.clone())
+                    .and_modify(|count| *count += 1)
+                    .or_insert(1);
             }
+
+            println!("    > {} : {}", plugin.guid, plugin.name);
         }
     }
 
-    if !plugin_counts_32.is_empty() {
-        println!();
-        stdout.set_color(&heading_spec).unwrap();
-        write!(&mut stdout, "Summary: Plugins Used In 32-bit Projects").unwrap();
-        stdout.reset().unwrap();
-        println!();
-        println!();
+    print_summary(&plugin_counts_32, "32-bit", &mut stdout, &heading_spec).unwrap();
+    print_summary(&plugin_counts_64, "64-bit", &mut stdout, &heading_spec).unwrap();
+    print_summary(&plugin_counts, "All", &mut stdout, &heading_spec).unwrap();
+}
 
-        let mut sorted_plugin_counts_32 = Vec::from_iter(plugin_counts_32);
-        sorted_plugin_counts_32
-            .sort_by(|a, b| a.0.name.to_lowercase().cmp(&b.0.name.to_lowercase()));
-
-        for (plugin, count) in &sorted_plugin_counts_32 {
-            println!("    > {} : {} ({})", plugin.guid, plugin.name, count);
-        }
+fn print_summary(
+    plugin_counts: &HashMap<Plugin, i32>,
+    description: &str,
+    stdout: &mut StandardStream,
+    heading_spec: &ColorSpec,
+) -> io::Result<()> {
+    if plugin_counts.is_empty() {
+        return Ok(());
     }
 
-    if !plugin_counts_64.is_empty() {
-        println!();
-        stdout.set_color(&heading_spec).unwrap();
-        write!(&mut stdout, "Summary: Plugins Used In 64-bit Projects",).unwrap();
-        stdout.reset().unwrap();
-        println!();
-        println!();
+    println!();
+    stdout.set_color(heading_spec)?;
+    write!(stdout, "Summary: Plugins Used In {description} Projects")?;
+    stdout.reset()?;
+    println!();
+    println!();
 
-        let mut sorted_plugin_counts_64 = Vec::from_iter(plugin_counts_64);
-        sorted_plugin_counts_64
-            .sort_by(|a, b| a.0.name.to_lowercase().cmp(&b.0.name.to_lowercase()));
+    let mut sorted_plugin_counts = Vec::from_iter(plugin_counts);
+    sorted_plugin_counts.sort_by(|a, b| a.0.name.to_lowercase().cmp(&b.0.name.to_lowercase()));
 
-        for (plugin, count) in &sorted_plugin_counts_64 {
-            println!("    > {} : {} ({})", plugin.guid, plugin.name, count);
-        }
+    for (plugin, count) in &sorted_plugin_counts {
+        println!("    > {} : {} ({})", plugin.guid, plugin.name, count);
     }
 
-    if !plugin_counts.is_empty() {
-        println!();
-        stdout.set_color(&heading_spec).unwrap();
-        write!(&mut stdout, "Summary: Plugins Used In All Projects",).unwrap();
-        stdout.reset().unwrap();
-        println!();
-        println!();
-
-        let mut sorted_plugin_counts = Vec::from_iter(plugin_counts);
-        sorted_plugin_counts.sort_by(|a, b| a.0.name.to_lowercase().cmp(&b.0.name.to_lowercase()));
-
-        for (plugin, count) in &sorted_plugin_counts {
-            println!("    > {} : {} ({})", plugin.guid, plugin.name, count);
-        }
-    }
+    Ok(())
 }

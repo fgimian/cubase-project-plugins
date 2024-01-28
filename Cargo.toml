@@ -2,21 +2,18 @@
 name = "cubase-project-plugins"
 version = "0.1.0"
 edition = "2021"
-description = "Determines which plugins are used in your Cubase projects. "
+description = "Displays plugins used in your Cubase projects along with the Cubase version the project was created with."
 repository = "https://github.com/fgimian/cubase-project-plugins.rs"
 readme = "README.md"
-license = "MIT"
+license = "MIT OR Apache-2.0"
 keywords = ["cubase"]
 categories = ["command-line-interface"]
 
 [dependencies]
-clap = { version = "4.2.7", features = ["derive"] }
+clap = { version = "4.2.7", features = ["derive", "string", "cargo"] }
+dirs = "5.0.1"
 glob = "0.3.1"
 serde = { version = "1.0.183", features = ["derive"] }
 termcolor = "1.2.0"
-toml = "0.7.6"
-
-[profile.release]
-lto = true
-strip = true
-codegen-units = 1
+thiserror = "1.0.56"
+toml = "0.8.8"
