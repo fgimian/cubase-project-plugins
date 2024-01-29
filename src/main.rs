@@ -41,33 +41,38 @@ fn main() {
         .map(|p| Pattern::new(p).unwrap())
         .collect::<Vec<Pattern>>();
 
-    let mut project_file_paths = Vec::new();
+    let project_file_paths = cli
+        .project_paths
+        .into_iter()
+        .flat_map(|project_path| {
+            let matched_paths = glob_with(
+                Path::new(&project_path)
+                    .join("**")
+                    .join("*.cpr")
+                    .to_str()
+                    .unwrap(),
+                MatchOptions {
+                    case_sensitive: false,
+                    require_literal_separator: false,
+                    require_literal_leading_dot: false,
+                },
+            )
+            .ok();
 
-    for project_path in cli.project_paths {
-        if let Ok(paths) = glob_with(
-            Path::new(&project_path)
-                .join("**")
-                .join("*.cpr")
-                .to_str()
-                .unwrap(),
-            MatchOptions {
-                case_sensitive: false,
-                require_literal_separator: false,
-                require_literal_leading_dot: false,
-            },
-        ) {
-            let filtered_paths = paths.filter_map(Result::ok).filter(|path| {
-                !path_ignore_globs.iter().any(|glob| {
-                    path.clone()
-                        .into_os_string()
-                        .into_string()
-                        .map_or(true, |path| glob.matches(&path))
-                })
+            let filtered_paths = matched_paths.map_or_else(Vec::new, |paths| {
+                paths
+                    .filter_map(Result::ok)
+                    .filter(|path| {
+                        !path_ignore_globs
+                            .iter()
+                            .any(|glob| path.to_str().map_or(true, |path| glob.matches(path)))
+                    })
+                    .collect::<Vec<_>>()
             });
 
-            project_file_paths.extend(filtered_paths);
-        }
-    }
+            filtered_paths
+        })
+        .collect::<Vec<_>>();
 
     let mut plugin_counts = HashMap::new();
     let mut plugin_counts_32 = HashMap::new();
