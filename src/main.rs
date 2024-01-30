@@ -99,13 +99,13 @@ fn run() -> Result<()> {
             },
         ) {
             Ok(project_file_paths) => project_file_paths,
-            Err(e) => {
+            Err(error) => {
                 println!();
                 println!("{project_path_heading}");
                 println!();
                 println!(
                     "{}",
-                    format!("Unable to glob for project files in the project path: {e}").red()
+                    format!("Unable to glob for project files in the project path: {error}").red()
                 );
                 continue;
             }
@@ -114,14 +114,14 @@ fn run() -> Result<()> {
         for project_file_path in project_file_paths {
             let project_file_path = match project_file_path {
                 Ok(project_file_path) => project_file_path,
-                Err(e) => {
+                Err(error) => {
                     println!();
                     println!("{project_path_heading}");
                     println!();
                     println!(
                         "{}",
                         format!(
-                            "Unable to glob a particular project file in the project path: {e}"
+                            "Unable to glob a particular project file in the project path: {error}"
                         )
                         .red()
                     );
@@ -153,32 +153,32 @@ fn run() -> Result<()> {
 
             let mut file = match File::open(&project_file_path) {
                 Ok(file) => file,
-                Err(e) => {
+                Err(error) => {
                     println!();
                     println!("{project_file_path_heading}");
                     println!();
-                    println!("{}", format!("Unable to open project file: {e}").red());
+                    println!("{}", format!("Unable to open project file: {error}").red());
                     continue;
                 }
             };
 
-            if let Err(e) = file.read_to_end(&mut project_bytes) {
+            if let Err(error) = file.read_to_end(&mut project_bytes) {
                 println!();
                 println!("{project_file_path_heading}");
                 println!();
-                println!("{}", format!("Unable to read project file: {e}").red());
+                println!("{}", format!("Unable to read project file: {error}").red());
                 continue;
             };
 
             let reader = Reader::new(&project_bytes);
             let project_details = match reader.get_project_details() {
                 Ok(project_details) => project_details,
-                Err(e) => {
+                Err(error) => {
                     project_bytes.clear();
                     println!();
                     println!("{project_file_path_heading}");
                     println!();
-                    println!("{}", format!("Unable to parse project file: {e}").red());
+                    println!("{}", format!("Unable to parse project file: {error}").red());
                     continue;
                 }
             };
@@ -252,8 +252,8 @@ fn run() -> Result<()> {
 }
 
 fn main() {
-    if let Err(e) = run() {
-        eprintln!("{}: {}", "error".red(), e);
+    if let Err(error) = run() {
+        eprintln!("{}: {}", "error".red(), error);
         process::exit(1);
     }
 }
