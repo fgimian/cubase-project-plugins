@@ -17,6 +17,7 @@ mod reader;
 use std::collections::HashMap;
 use std::fs::File;
 use std::io::Read;
+use std::path::PathBuf;
 use std::process;
 use std::{fs, path::Path};
 
@@ -33,9 +34,14 @@ use cli::Cli;
 fn run() -> Result<()> {
     let cli = Cli::parse();
 
-    let config = match &cli.config {
+    let config_path = cli.config.or_else(|| match get_default_config_path() {
+        Some(default_config_path) if default_config_path.is_file() => Some(default_config_path),
+        _ => None,
+    });
+
+    let config = match config_path {
         Some(config_path) => {
-            let config_string = fs::read_to_string(config_path).map_err(|e| {
+            let config_string = fs::read_to_string(&config_path).map_err(|e| {
                 anyhow!(
                     "unable to open config file '{}' ({})",
                     config_path.display().to_string().blue(),
@@ -250,6 +256,10 @@ fn main() {
         eprintln!("{}: {}", "error".red(), e);
         process::exit(1);
     }
+}
+
+fn get_default_config_path() -> Option<PathBuf> {
+    dirs::home_dir().map(|home_dir| home_dir.join(".config").join("cubase-project-plugins.toml"))
 }
 
 fn print_summary(plugin_counts: &HashMap<Plugin, i32>, description: &str) {

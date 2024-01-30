@@ -1,4 +1,4 @@
-use std::{path::PathBuf, sync::OnceLock};
+use std::path::PathBuf;
 
 use clap::Parser;
 
@@ -10,28 +10,6 @@ pub struct Cli {
     pub project_paths: Vec<String>,
 
     /// Config file path.
-    #[arg(
-        short,
-        long,
-        value_name = "PATH",
-        default_value = default_config_path(),
-    )]
+    #[arg(short, long, value_name = "PATH")]
     pub config: Option<PathBuf>,
-}
-
-fn default_config_path() -> Option<&'static str> {
-    dirs::home_dir()
-        .map(|home_dir| {
-            home_dir
-                .join(".config")
-                .join("cubase-project-plugins.toml")
-                .into_os_string()
-        })
-        .and_then(|path| path.into_string().ok())
-        .map(|path| {
-            static DEFAULT_CONFIG_PATH: OnceLock<String> = OnceLock::new();
-            let path = DEFAULT_CONFIG_PATH.get_or_init(|| path);
-            let path: &'static str = path;
-            path
-        })
 }
