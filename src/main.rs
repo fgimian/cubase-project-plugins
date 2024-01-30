@@ -23,13 +23,20 @@ use std::{fs, path::Path};
 
 use anyhow::{anyhow, Result};
 use clap::Parser;
-use colored::Colorize;
-use config::Config;
-use glob::{MatchOptions, Pattern};
-use project::Plugin;
-use reader::Reader;
-
 use cli::Cli;
+use colored::Colorize;
+use glob::{MatchOptions, Pattern};
+
+use crate::config::Config;
+use crate::project::Plugin;
+use crate::reader::Reader;
+
+fn main() {
+    if let Err(error) = run() {
+        eprintln!("{}: {}", "error".red(), error);
+        process::exit(1);
+    }
+}
 
 fn run() -> Result<()> {
     let cli = Cli::parse();
@@ -249,13 +256,6 @@ fn run() -> Result<()> {
     print_summary(&plugin_counts, "All");
 
     Ok(())
-}
-
-fn main() {
-    if let Err(error) = run() {
-        eprintln!("{}: {}", "error".red(), error);
-        process::exit(1);
-    }
 }
 
 fn get_default_config_path() -> Option<PathBuf> {
