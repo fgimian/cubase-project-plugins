@@ -127,49 +127,43 @@ impl<'a> Reader<'a> {
     }
 
     fn search_plugin(&self, index: usize) -> Result<Option<(Plugin, usize)>, Error> {
-        let mut read_index = index;
+        let mut index = index;
 
-        match self.get_bytes(read_index, PLUGIN_UID_SEARCH_TERM.len()) {
+        match self.get_bytes(index, PLUGIN_UID_SEARCH_TERM.len()) {
             Some(PLUGIN_UID_SEARCH_TERM) => (),
             _ => return Ok(None),
         };
-        read_index += PLUGIN_UID_SEARCH_TERM.len() + 22;
+        index += PLUGIN_UID_SEARCH_TERM.len() + 22;
 
-        let (guid, len) = self
-            .get_token(read_index)
-            .map_err(|_| Error::NoPluginGUID)?;
-        read_index += len + 3;
+        let (guid, len) = self.get_token(index).map_err(|_| Error::NoPluginGUID)?;
+        index += len + 3;
 
-        let (key, len) = self
-            .get_token(read_index)
-            .map_err(|_| Error::NoPluginName)?;
+        let (key, len) = self.get_token(index).map_err(|_| Error::NoPluginName)?;
         if key != "Plugin Name" {
             return Err(Error::NoPluginName);
         }
-        read_index += len + 5;
+        index += len + 5;
 
-        let (mut name, len) = self
-            .get_token(read_index)
-            .map_err(|_| Error::NoPluginName)?;
-        read_index += len + 3;
+        let (mut name, len) = self.get_token(index).map_err(|_| Error::NoPluginName)?;
+        index += len + 3;
 
         // In Cubase 8.x and above, in cases where an instrument track has been renamed using
         // Shift+Enter, the name retrieved above will be the track title and the name of the plugin
         // will follow under the key "Original Plugin Name".
         let (key, len) = self
-            .get_token(read_index)
+            .get_token(index)
             .map_err(|_| Error::NoTokenAfterPluginName)?;
         if key == "Original Plugin Name" {
-            read_index += len + 5;
+            index += len + 5;
 
             let (original_name, len) = self
-                .get_token(read_index)
+                .get_token(index)
                 .map_err(|_| Error::NoOriginalPluginName)?;
             name = original_name;
-            read_index += len;
+            index += len;
         }
 
-        Ok(Some((Plugin { guid, name }, read_index)))
+        Ok(Some((Plugin { guid, name }, index)))
     }
 
     fn get_bytes(&self, index: usize, len: usize) -> Option<&[u8]> {
