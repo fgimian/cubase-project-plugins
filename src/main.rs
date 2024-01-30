@@ -67,7 +67,7 @@ fn run() -> Result<()> {
     let mut plugin_counts_32 = HashMap::new();
     let mut plugin_counts_64 = HashMap::new();
 
-    let mut project_data = Vec::new();
+    let mut project_bytes = Vec::new();
 
     for project_path in &cli.project_paths {
         let project_path_heading = format!("Path: {project_path}").white().on_red();
@@ -156,7 +156,7 @@ fn run() -> Result<()> {
                 }
             };
 
-            if let Err(e) = file.read_to_end(&mut project_data) {
+            if let Err(e) = file.read_to_end(&mut project_bytes) {
                 println!();
                 println!("{project_file_path_heading}");
                 println!();
@@ -164,11 +164,11 @@ fn run() -> Result<()> {
                 continue;
             };
 
-            let reader = Reader::new(&project_data);
+            let reader = Reader::new(&project_bytes);
             let project_details = match reader.get_project_details() {
                 Ok(project_details) => project_details,
                 Err(e) => {
-                    project_data.clear();
+                    project_bytes.clear();
                     println!();
                     println!("{project_file_path_heading}");
                     println!();
@@ -176,7 +176,7 @@ fn run() -> Result<()> {
                     continue;
                 }
             };
-            project_data.clear();
+            project_bytes.clear();
 
             let is_64_bit = matches!(
                 project_details.metadata.architecture.as_str(),

@@ -23,7 +23,7 @@ pub struct Plugin {
 }
 
 /// Captures the Cubase version and all plugins used for a Cubase project.
-#[derive(Debug)]
+#[derive(Debug, Eq, PartialEq)]
 pub struct Project {
     /// Metadata describing the Cubase version used to create the project.
     pub metadata: Metadata,
