@@ -10,6 +10,7 @@ keywords = ["cubase"]
 categories = ["command-line-interface"]
 
 [dependencies]
+anyhow = "1.0.79"
 clap = { version = "4.2.7", features = ["derive", "string", "cargo"] }
 colored = "2.1.0"
 dirs = "5.0.1"

@@ -4,7 +4,8 @@
     clippy::nursery,
     clippy::cargo,
     clippy::expect_used,
-    // clippy::unwrap_used
+    clippy::unwrap_used,
+    clippy::panic
 )]
 #![allow(clippy::too_many_lines)]
 
@@ -16,144 +17,239 @@ mod reader;
 use std::collections::HashMap;
 use std::fs::File;
 use std::io::Read;
+use std::process;
 use std::{fs, path::Path};
 
+use anyhow::{anyhow, Result};
 use clap::Parser;
 use colored::Colorize;
 use config::Config;
-use glob::{glob_with, MatchOptions, Pattern};
+use glob::{MatchOptions, Pattern};
 use project::Plugin;
 use reader::Reader;
 
 use cli::Cli;
 
-fn main() {
+fn run() -> Result<()> {
     let cli = Cli::parse();
 
-    let config = cli.config.map_or_else(Config::default, |config_path| {
-        let config_string = fs::read_to_string(config_path).unwrap();
-        toml::from_str(&config_string).unwrap()
-    });
+    let config = match &cli.config {
+        Some(config_path) => {
+            let config_string = fs::read_to_string(config_path).map_err(|e| {
+                anyhow!(
+                    "unable to open config file '{}' ({})",
+                    config_path.display().to_string().blue(),
+                    e
+                )
+            })?;
+
+            toml::from_str(&config_string).map_err(|e| {
+                anyhow!(
+                    "unable to parse config file '{}' ({})",
+                    config_path.display().to_string().blue(),
+                    e
+                )
+            })?
+        }
+        None => Config::default(),
+    };
 
     let path_ignore_globs = config
         .path_ignore_patterns
         .iter()
-        .map(|p| Pattern::new(p).unwrap())
-        .collect::<Vec<Pattern>>();
-
-    let project_file_paths = cli
-        .project_paths
-        .into_iter()
-        .flat_map(|project_path| {
-            let matched_paths = glob_with(
-                Path::new(&project_path)
-                    .join("**")
-                    .join("*.cpr")
-                    .to_str()
-                    .unwrap(),
-                MatchOptions {
-                    case_sensitive: false,
-                    require_literal_separator: false,
-                    require_literal_leading_dot: false,
-                },
-            )
-            .ok();
-
-            let filtered_paths = matched_paths.map_or_else(Vec::new, |paths| {
-                paths
-                    .filter_map(Result::ok)
-                    .filter(|path| {
-                        !path_ignore_globs
-                            .iter()
-                            .any(|glob| path.to_str().map_or(true, |path| glob.matches(path)))
-                    })
-                    .collect::<Vec<_>>()
-            });
-
-            filtered_paths
+        .map(|p| {
+            Pattern::new(p)
+                .map_err(|e| anyhow!("unable to parse path ignore pattern '{}' ({})", p.blue(), e))
         })
-        .collect::<Vec<_>>();
+        .collect::<Result<Vec<_>>>()?;
 
     let mut plugin_counts = HashMap::new();
     let mut plugin_counts_32 = HashMap::new();
     let mut plugin_counts_64 = HashMap::new();
 
-    let mut data = Vec::new();
+    let mut project_data = Vec::new();
 
-    for project_file_path in project_file_paths {
-        let mut file = File::open(&project_file_path).unwrap();
-        file.read_to_end(&mut data).unwrap();
+    for project_path in &cli.project_paths {
+        let project_path_heading = format!("Path: {project_path}").white().on_red();
 
-        let reader = Reader::new(&data);
-        let project_details = reader.get_project_details().unwrap();
-        data.clear();
-
-        let is_64_bit = matches!(
-            project_details.metadata.architecture.as_str(),
-            "WIN64" | "MAC64 LE"
-        );
-
-        if is_64_bit && !config.projects.report_64_bit
-            || !is_64_bit && !config.projects.report_32_bit
-        {
+        let project_file_path_pattern = Path::new(&project_path).join("**").join("*.cpr");
+        let Some(project_file_path_pattern) = project_file_path_pattern.to_str() else {
+            println!();
+            println!("{project_path_heading}");
+            println!();
+            println!(
+                "{}",
+                "Unable to convert the project file pattern to a string".red()
+            );
             continue;
-        }
+        };
 
-        let path_heading = format!("Path: {}", project_file_path.display())
-            .white()
-            .on_red();
+        let project_file_paths = match glob::glob_with(
+            project_file_path_pattern,
+            MatchOptions {
+                case_sensitive: false,
+                require_literal_separator: false,
+                require_literal_leading_dot: false,
+            },
+        ) {
+            Ok(project_file_paths) => project_file_paths,
+            Err(e) => {
+                println!();
+                println!("{project_path_heading}");
+                println!();
+                println!(
+                    "{}",
+                    format!("Unable to glob for project files in the project path: {e}").red()
+                );
+                continue;
+            }
+        };
 
-        println!();
-        println!("{path_heading}");
-        println!();
+        for project_file_path in project_file_paths {
+            let project_file_path = match project_file_path {
+                Ok(project_file_path) => project_file_path,
+                Err(e) => {
+                    println!();
+                    println!("{project_path_heading}");
+                    println!();
+                    println!(
+                        "{}",
+                        format!(
+                            "Unable to glob a particular project file in the project path: {e}"
+                        )
+                        .red()
+                    );
+                    continue;
+                }
+            };
 
-        let project_heading = format!(
-            "{application} {version} ({architecture})",
-            application = project_details.metadata.application,
-            version = project_details.metadata.version,
-            architecture = project_details.metadata.architecture
-        )
-        .blue();
+            let project_file_path_heading = format!("Path: {}", project_file_path.display())
+                .white()
+                .on_red();
 
-        println!("{project_heading}");
+            let Some(projcet_file_path_str) = project_file_path.to_str() else {
+                println!();
+                println!("{project_path_heading}");
+                println!();
+                println!(
+                    "{}",
+                    "Unable to convert the project file path to a string".red()
+                );
+                continue;
+            };
 
-        if project_details.plugins.is_empty() {
-            continue;
-        }
-
-        let mut sorted_plugins = Vec::from_iter(project_details.plugins);
-        sorted_plugins.sort_by(|a, b| a.name.to_lowercase().cmp(&b.name.to_lowercase()));
-
-        println!();
-        for plugin in sorted_plugins
-            .iter()
-            .filter(|p| !config.plugins.guid_ignores.contains(&p.guid))
-            .filter(|p| !config.plugins.name_ignores.contains(&p.name))
-        {
-            plugin_counts
-                .entry(plugin.clone())
-                .and_modify(|count| *count += 1)
-                .or_insert(1);
-
-            if is_64_bit {
-                plugin_counts_64
-                    .entry(plugin.clone())
-                    .and_modify(|count| *count += 1)
-                    .or_insert(1);
-            } else {
-                plugin_counts_32
-                    .entry(plugin.clone())
-                    .and_modify(|count| *count += 1)
-                    .or_insert(1);
+            if path_ignore_globs
+                .iter()
+                .any(|glob| glob.matches(projcet_file_path_str))
+            {
+                continue;
             }
 
-            println!("    > {} : {}", plugin.guid, plugin.name);
+            let mut file = match File::open(&project_file_path) {
+                Ok(file) => file,
+                Err(e) => {
+                    println!();
+                    println!("{project_file_path_heading}");
+                    println!();
+                    println!("{}", format!("Unable to open project file: {e}").red());
+                    continue;
+                }
+            };
+
+            if let Err(e) = file.read_to_end(&mut project_data) {
+                println!();
+                println!("{project_file_path_heading}");
+                println!();
+                println!("{}", format!("Unable to read project file: {e}").red());
+                continue;
+            };
+
+            let reader = Reader::new(&project_data);
+            let project_details = match reader.get_project_details() {
+                Ok(project_details) => project_details,
+                Err(e) => {
+                    project_data.clear();
+                    println!();
+                    println!("{project_file_path_heading}");
+                    println!();
+                    println!("{}", format!("Unable to parse project file: {e}").red());
+                    continue;
+                }
+            };
+            project_data.clear();
+
+            let is_64_bit = matches!(
+                project_details.metadata.architecture.as_str(),
+                "WIN64" | "MAC64 LE"
+            );
+
+            if is_64_bit && !config.projects.report_64_bit
+                || !is_64_bit && !config.projects.report_32_bit
+            {
+                continue;
+            }
+
+            println!();
+            println!("{project_file_path_heading}");
+            println!();
+
+            let project_heading = format!(
+                "{application} {version} ({architecture})",
+                application = project_details.metadata.application,
+                version = project_details.metadata.version,
+                architecture = project_details.metadata.architecture
+            )
+            .blue();
+
+            println!("{project_heading}");
+
+            if project_details.plugins.is_empty() {
+                continue;
+            }
+
+            let mut sorted_plugins = Vec::from_iter(project_details.plugins);
+            sorted_plugins.sort_by(|a, b| a.name.to_lowercase().cmp(&b.name.to_lowercase()));
+
+            println!();
+            for plugin in sorted_plugins
+                .iter()
+                .filter(|p| !config.plugins.guid_ignores.contains(&p.guid))
+                .filter(|p| !config.plugins.name_ignores.contains(&p.name))
+            {
+                plugin_counts
+                    .entry(plugin.clone())
+                    .and_modify(|count| *count += 1)
+                    .or_insert(1);
+
+                if is_64_bit {
+                    plugin_counts_64
+                        .entry(plugin.clone())
+                        .and_modify(|count| *count += 1)
+                        .or_insert(1);
+                } else {
+                    plugin_counts_32
+                        .entry(plugin.clone())
+                        .and_modify(|count| *count += 1)
+                        .or_insert(1);
+                }
+
+                println!("    > {} : {}", plugin.guid, plugin.name);
+            }
         }
     }
 
     print_summary(&plugin_counts_32, "32-bit");
     print_summary(&plugin_counts_64, "64-bit");
     print_summary(&plugin_counts, "All");
+
+    Ok(())
+}
+
+fn main() {
+    if let Err(e) = run() {
+        eprintln!("{}: {}", "error".red(), e);
+        process::exit(1);
+    }
 }
 
 fn print_summary(plugin_counts: &HashMap<Plugin, i32>, description: &str) {
