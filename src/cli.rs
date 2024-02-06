@@ -11,5 +11,5 @@ pub struct Cli {
 
     /// Config file path.
     #[arg(short, long, value_name = "PATH")]
-    pub config: Option<PathBuf>,
+    pub config_path: Option<PathBuf>,
 }

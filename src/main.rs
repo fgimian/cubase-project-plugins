@@ -41,7 +41,7 @@ fn main() {
 fn run() -> Result<()> {
     let cli = Cli::parse();
 
-    let config_path = cli.config.or_else(|| match get_default_config_path() {
+    let config_path = cli.config_path.or_else(|| match get_default_config_path() {
         Some(default_config_path) if default_config_path.is_file() => Some(default_config_path),
         _ => None,
     });
