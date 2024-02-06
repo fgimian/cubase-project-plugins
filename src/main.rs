@@ -14,12 +14,14 @@ mod config;
 mod project;
 mod reader;
 
-use std::collections::HashMap;
-use std::fs::File;
-use std::io::Read;
-use std::path::PathBuf;
-use std::process;
-use std::{fs, path::Path};
+use std::{
+    collections::HashMap,
+    fs,
+    fs::File,
+    io::Read,
+    path::{Path, PathBuf},
+    process,
+};
 
 use anyhow::{anyhow, Result};
 use clap::Parser;
@@ -27,9 +29,7 @@ use cli::Cli;
 use colored::Colorize;
 use glob::{MatchOptions, Pattern};
 
-use crate::config::Config;
-use crate::project::Plugin;
-use crate::reader::Reader;
+use crate::{config::Config, project::Plugin, reader::Reader};
 
 fn main() {
     if let Err(error) = run() {
