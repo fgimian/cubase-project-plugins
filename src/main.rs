@@ -50,7 +50,7 @@ fn run() -> Result<()> {
         Some(config_path) => {
             let config_string = fs::read_to_string(&config_path).map_err(|e| {
                 anyhow!(
-                    "unable to open config file '{}' ({})",
+                    "unable to open and read config file '{}' ({})",
                     config_path.display().to_string().blue(),
                     e
                 )
