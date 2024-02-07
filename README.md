@@ -1,9 +1,10 @@
 # Cubase Project Plugins (written in Rust)
 
-This project will analyse a directory containing Cubase projects recursively and show the version
+This program will analyse a directory containing Cubase projects recursively and show the version
 of Cubase the project was created with along with a list all the plugins used (with their GUIDs).
 
-This version of the tool is written in Rust which yields about a 30% speed improvement over the [Go version](https://github.com/fgimian/cubase-project-plugins).
+This version of the tool is written in Rust which yields about a 30% speed improvement over the
+[Go version](https://github.com/fgimian/cubase-project-plugins).
 
 ## Limitations
 
@@ -14,7 +15,8 @@ assumed to be 32-bit.
 ## Configuring the Tool
 
 You may optionally create a TOML config file for the utility which includes certain paths and
-plugins to exclude from output.
+plugins to exclude from output. The default location where the tool will search for the config
+file is expected is **~/.config/cubase-project-plugins.toml**.
 
 The config file should look similar to that below:
 
@@ -57,9 +59,9 @@ You may see the sample config **config.sample.toml** for inspiration.
     cargo install --git https://github.com/fgimian/cubase-project-plugins.rs.git
     ```
 
-3. You may now run the tool using the `target/release/cubase-project-plugins` executable
+3. You may now run the tool using the `cubase-project-plugins` executable
 
-You may optionally redirect the output to a file using the `>` operator.
+Please use the `-h/--help` option for further usage instructions.
 
 ## License
 
