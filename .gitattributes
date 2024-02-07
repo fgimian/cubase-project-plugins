@@ -1,0 +1,8 @@
+*               text eol=lf
+*.rs            text eol=lf diff=rust
+*.toml          text eol=lf diff=toml
+*.md            text eol=lf diff=markdown
+*.cpr           binary
+.gitattributes  export-ignore
+.gitignore      export-ignore
+.gitkeep        export-ignore
