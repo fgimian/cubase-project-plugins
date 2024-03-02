@@ -98,10 +98,10 @@ impl<'a> Reader<'a> {
         let (version, len) = self.get_token(index).map_err(|_| Error::NoVersion)?;
         index += len + 3;
 
-        let version = match version.strip_prefix("Version ") {
-            Some(version) => version.to_string(),
-            None => version,
-        };
+        let version = version
+            .strip_prefix("Version ")
+            .map(ToString::to_string)
+            .unwrap_or(version);
 
         let (release_date, len) = self.get_token(index).map_err(|_| Error::NoReleaseDate)?;
         index += len + 7;
