@@ -9,6 +9,16 @@ license = "MIT"
 keywords = ["cubase"]
 categories = ["command-line-interface"]
 
+[lints.clippy]
+all = "warn"
+pedantic = "warn"
+nursery = "warn"
+cargo = "warn"
+expect_used = "warn"
+unwrap_used = "warn"
+panic = "warn"
+too_many_lines = { level = "allow", priority = 1 }
+
 [dependencies]
 anyhow = "1.0.79"
 clap = { version = "4.2.7", features = ["derive"] }

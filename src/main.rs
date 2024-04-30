@@ -1,14 +1,3 @@
-#![warn(
-    clippy::all,
-    clippy::pedantic,
-    clippy::nursery,
-    clippy::cargo,
-    clippy::expect_used,
-    clippy::unwrap_used,
-    clippy::panic
-)]
-#![allow(clippy::too_many_lines)]
-
 mod cli;
 mod config;
 mod project;
