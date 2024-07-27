@@ -6,7 +6,7 @@ description = "Displays plugins used in your Cubase projects along with the Cuba
 repository = "https://github.com/fgimian/cubase-project-plugins.rs"
 readme = "README.md"
 license = "MIT"
-keywords = ["cubase"]
+keywords = ["music-production", "cubase"]
 categories = ["command-line-interface"]
 
 [lints.clippy]
