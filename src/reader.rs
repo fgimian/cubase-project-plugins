@@ -195,7 +195,7 @@ impl<'a> Reader<'a> {
 }
 
 #[cfg(test)]
-#[allow(clippy::expect_used, clippy::unwrap_used, clippy::panic)]
+#[allow(clippy::unwrap_used)]
 mod tests {
     use std::{fs, path::PathBuf};
 

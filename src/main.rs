@@ -13,9 +13,9 @@ use std::{
 };
 
 use anyhow::{anyhow, Result};
-use clap::Parser;
+use clap::Parser as _;
 use cli::Cli;
-use colored::Colorize;
+use colored::Colorize as _;
 use glob::{MatchOptions, Pattern};
 
 use crate::{config::Config, project::Plugin, reader::Reader};
@@ -39,17 +39,15 @@ fn run() -> Result<()> {
         Some(config_path) => {
             let config_string = fs::read_to_string(&config_path).map_err(|e| {
                 anyhow!(
-                    "unable to open and read config file '{}' ({})",
-                    config_path.display().to_string().blue(),
-                    e
+                    "unable to open and read config file '{}' ({e})",
+                    config_path.display().to_string().blue()
                 )
             })?;
 
             toml::from_str(&config_string).map_err(|e| {
                 anyhow!(
-                    "unable to parse config file '{}' ({})",
-                    config_path.display().to_string().blue(),
-                    e
+                    "unable to parse config file '{}' ({e})",
+                    config_path.display().to_string().blue()
                 )
             })?
         }
@@ -61,7 +59,7 @@ fn run() -> Result<()> {
         .iter()
         .map(|p| {
             Pattern::new(p)
-                .map_err(|e| anyhow!("unable to parse path ignore pattern '{}' ({})", p.blue(), e))
+                .map_err(|e| anyhow!("unable to parse path ignore pattern '{}' ({e})", p.blue()))
         })
         .collect::<Result<Vec<_>>>()?;
 

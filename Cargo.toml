@@ -10,14 +10,14 @@ keywords = ["cubase"]
 categories = ["command-line-interface"]
 
 [lints.clippy]
-all = "warn"
-pedantic = "warn"
-nursery = "warn"
-cargo = "warn"
 expect_used = "warn"
 unwrap_used = "warn"
 panic = "warn"
-too_many_lines = { level = "allow", priority = 1 }
+correctness = { level = "warn", priority = 1 }
+pedantic = { level = "warn", priority = 1 }
+nursery = { level = "warn", priority = 1 }
+cargo = { level = "warn", priority = 1 }
+too_many_lines = { level = "allow", priority = 2 }
 
 [dependencies]
 anyhow = "1.0.79"
