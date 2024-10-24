@@ -12,7 +12,7 @@ use std::{
     process,
 };
 
-use anyhow::{anyhow, Result};
+use anyhow::{Context, Result};
 use clap::Parser as _;
 use cli::Cli;
 use colored::Colorize as _;
@@ -22,7 +22,17 @@ use crate::{config::Config, project::Plugin, reader::Reader};
 
 fn main() {
     if let Err(error) = run() {
-        eprintln!("{}: {}", "error".red(), error);
+        for (index, cause) in error.chain().enumerate() {
+            if index == 0 {
+                eprintln!("{}: {}", "error".red(), cause);
+                continue;
+            }
+
+            if index == 1 {
+                eprintln!("{}", "caused by:".red());
+            }
+            println!("    {}: {}", index - 1, cause);
+        }
         process::exit(1);
     }
 }
@@ -37,16 +47,16 @@ fn run() -> Result<()> {
 
     let config = match config_path {
         Some(config_path) => {
-            let config_string = fs::read_to_string(&config_path).map_err(|e| {
-                anyhow!(
-                    "unable to open and read config file '{}' ({e})",
+            let config_string = fs::read_to_string(&config_path).with_context(|| {
+                format!(
+                    "unable to open and read config file '{}'",
                     config_path.display().to_string().blue()
                 )
             })?;
 
-            toml::from_str(&config_string).map_err(|e| {
-                anyhow!(
-                    "unable to parse config file '{}' ({e})",
+            toml::from_str(&config_string).with_context(|| {
+                format!(
+                    "unable to parse config file '{}'",
                     config_path.display().to_string().blue()
                 )
             })?
@@ -59,7 +69,7 @@ fn run() -> Result<()> {
         .iter()
         .map(|p| {
             Pattern::new(p)
-                .map_err(|e| anyhow!("unable to parse path ignore pattern '{}' ({e})", p.blue()))
+                .with_context(|| format!("unable to parse path ignore pattern '{}'", p.blue()))
         })
         .collect::<Result<Vec<_>>>()?;
 
