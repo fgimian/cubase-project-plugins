@@ -15,3 +15,7 @@ pub struct Cli {
     #[arg(short, long, value_name = "PATH")]
     pub config_path: Option<PathBuf>,
 }
+
+pub fn default_config_path() -> Option<PathBuf> {
+    dirs::home_dir().map(|home_dir| home_dir.join(".config").join("cubase-project-plugins.toml"))
+}

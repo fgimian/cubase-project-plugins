@@ -3,14 +3,7 @@ mod config;
 mod project;
 mod reader;
 
-use std::{
-    collections::HashMap,
-    fs,
-    fs::File,
-    io::Read,
-    path::{Path, PathBuf},
-    process,
-};
+use std::{collections::HashMap, fs, fs::File, io::Read, path::Path, process};
 
 use anyhow::{Context, Result};
 use clap::Parser as _;
@@ -40,10 +33,12 @@ fn main() {
 fn run() -> Result<()> {
     let cli = Cli::parse();
 
-    let config_path = cli.config_path.or_else(|| match get_default_config_path() {
-        Some(default_config_path) if default_config_path.is_file() => Some(default_config_path),
-        _ => None,
-    });
+    let config_path = cli
+        .config_path
+        .or_else(|| match cli::default_config_path() {
+            Some(default_config_path) if default_config_path.is_file() => Some(default_config_path),
+            _ => None,
+        });
 
     let config = match config_path {
         Some(config_path) => {
@@ -253,10 +248,6 @@ fn run() -> Result<()> {
     print_summary(&plugin_counts, "All");
 
     Ok(())
-}
-
-fn get_default_config_path() -> Option<PathBuf> {
-    dirs::home_dir().map(|home_dir| home_dir.join(".config").join("cubase-project-plugins.toml"))
 }
 
 fn print_summary(plugin_counts: &HashMap<Plugin, i32>, description: &str) {
