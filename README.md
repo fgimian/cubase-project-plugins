@@ -1,10 +1,7 @@
-# Cubase Project Plugins (written in Rust)
+# Cubase Project
 
 This program will analyse a directory containing Cubase projects recursively and show the version
 of Cubase the project was created with along with a list all the plugins used (with their GUIDs).
-
-This version of the tool is written in Rust which yields about a 30% speed improvement over the
-[Go version](https://github.com/fgimian/cubase-project-plugins).
 
 ## Limitations
 
@@ -56,7 +53,7 @@ You may see the sample config **config.sample.toml** for inspiration.
 2. Install the tool
 
     ```
-    cargo install --git https://github.com/fgimian/cubase-project-plugins.rs.git
+    cargo install --git https://github.com/fgimian/cubase-project-plugins.git
     ```
 
 3. You may now run the tool using the `cubase-project-plugins` executable
@@ -66,5 +63,5 @@ Please use the `-h/--help` option for further usage instructions.
 ## License
 
 Cubase Project Plugins is released under the **MIT** license. Please see the
-[LICENSE](https://github.com/fgimian/cubase-project-plugins.rs/blob/main/LICENSE) file for more
+[LICENSE](https://github.com/fgimian/cubase-project-plugins/blob/main/LICENSE) file for more
 details.
