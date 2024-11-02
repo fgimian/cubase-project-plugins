@@ -31,3 +31,4 @@ toml = "0.8.19"
 
 [dev-dependencies]
 rstest = "0.23.0"
+similar-asserts = "1.6.0"

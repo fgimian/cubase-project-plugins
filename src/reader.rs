@@ -200,6 +200,7 @@ mod tests {
     use std::{fs, path::PathBuf};
 
     use rstest::*;
+    use similar_asserts::assert_eq;
 
     use super::*;
 
