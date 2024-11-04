@@ -132,20 +132,9 @@ fn run() -> Result<()> {
                 .white()
                 .on_red();
 
-            let Some(projcet_file_path_str) = project_file_path.to_str() else {
-                println!();
-                println!("{project_path_heading}");
-                println!();
-                println!(
-                    "{}",
-                    "Unable to convert the project file path to a string".red()
-                );
-                continue;
-            };
-
             if path_ignore_globs
                 .iter()
-                .any(|glob| glob.matches(projcet_file_path_str))
+                .any(|glob| glob.matches_path(&project_file_path))
             {
                 continue;
             }
