@@ -17,14 +17,14 @@ fn main() {
     if let Err(error) = run() {
         for (index, cause) in error.chain().enumerate() {
             if index == 0 {
-                eprintln!("{}: {}", "error".red(), cause);
+                eprintln!("{}: {cause}", "error".red());
                 continue;
             }
 
             if index == 1 {
                 eprintln!("{}", "caused by:".red());
             }
-            println!("    {}: {}", index - 1, cause);
+            println!("    {}: {cause}", index - 1);
         }
         process::exit(1);
     }
