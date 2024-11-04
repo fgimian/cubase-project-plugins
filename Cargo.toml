@@ -17,7 +17,6 @@ correctness = { level = "warn", priority = 1 }
 pedantic = { level = "warn", priority = 1 }
 nursery = { level = "warn", priority = 1 }
 cargo = { level = "warn", priority = 1 }
-too_many_lines = { level = "allow", priority = 2 }
 
 [dependencies]
 anyhow = "1.0.91"
