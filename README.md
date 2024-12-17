@@ -1,5 +1,9 @@
 # Cubase Project
 
+[![Build Status](https://github.com/fgimian/cubase-project-plugins/actions/workflows/release.yml/badge.svg?branch=main)](https://github.com/fgimian/cubase-project-plugins/actions)
+[![License](https://img.shields.io/github/license/fgimian/cubase-project-plugins)](https://github.com/fgimian/cubase-project-plugins/blob/main/LICENSE)
+[![Latest Release](https://img.shields.io/github/v/release/fgimian/cubase-project-plugins?include_prereleases)](https://github.com/fgimian/cubase-project-plugins/releases)
+
 This program will analyse a directory containing Cubase projects recursively and show the version
 of Cubase the project was created with along with a list all the plugins used (with their GUIDs).
 
@@ -9,7 +13,19 @@ The tool works for projects created in Cubase 4 or later.  Older projects (e.g. 
 SX3) will only show the Cubase version but no plugins will be listed and architecture may be
 assumed to be 32-bit.
 
-## Configuring the Tool
+## Getting Started
+
+### Downloading the Installer
+
+You may download the latest release from the
+[releases page](https://github.com/fgimian/cubase-project-plugins/releases). Simply expand the
+executable contained in the chosen archive to a directory in your environment path.
+
+### Usage
+
+You may now run the tool using the `cubase-project-plugins` executable. Please use the `-h/--help` option for further usage instructions.
+
+### Configuration
 
 You may optionally create a TOML config file for the utility which includes certain paths and
 plugins to exclude from output. The default location where the tool will search for the config
@@ -44,21 +60,6 @@ name_ignores = [
 ```
 
 You may see the sample config **config.sample.toml** for inspiration.
-
-## Running the Tool
-
-### Usage
-
-1. Install [Rust](https://www.rust-lang.org/tools/install)
-2. Install the tool
-
-    ```
-    cargo install --git https://github.com/fgimian/cubase-project-plugins.git
-    ```
-
-3. You may now run the tool using the `cubase-project-plugins` executable
-
-Please use the `-h/--help` option for further usage instructions.
 
 ## License
 
