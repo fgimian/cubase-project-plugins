@@ -1,0 +1,85 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - v[0-9]+.*
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
+
+env:
+  CARGO_INCREMENTAL: 0
+  CARGO_PROFILE_RELEASE_CODEGEN_UNITS: 1
+  CARGO_PROFILE_RELEASE_LTO: true
+  CARGO_PROFILE_RELEASE_OPT_LEVEL: 3
+  CARGO_TERM_COLOR: always
+  RUST_BACKTRACE: 1
+  RUSTFLAGS: "-D warnings"
+  RUSTUP_MAX_RETRIES: 10
+
+jobs:
+  create-release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: taiki-e/create-gh-release-action@v1
+        with:
+          draft: true
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+  upload-assets:
+    needs: create-release
+    permissions:
+      attestations: write
+      contents: write
+      id-token: write # Needed for attestations
+    strategy:
+      matrix:
+        include:
+          - target: aarch64-unknown-linux-gnu
+            suffix: linux-arm64-gnu
+            os: ubuntu-latest
+          - target: aarch64-unknown-linux-musl
+            suffix: linux-arm64-musl
+            os: ubuntu-latest
+          - target: x86_64-unknown-linux-gnu
+            suffix: linux-x86_64-gnu
+            os: ubuntu-latest
+          - target: x86_64-unknown-linux-musl
+            suffix: linux-x86_64-musl
+            os: ubuntu-latest
+          - target: aarch64-pc-windows-msvc
+            suffix: windows-arm64-msvc
+            os: windows-latest
+          - target: x86_64-pc-windows-msvc
+            suffix: windows-x86_64-msvc
+            os: windows-latest
+          - target: aarch64-apple-darwin
+            suffix: macos-arm64-darwin
+            os: macos-latest
+          - target: x86_64-apple-darwin
+            suffix: macos-x86_64-darwin
+            os: macos-latest
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: taiki-e/upload-rust-binary-action@v1
+        id: upload-rust-binary-action
+        with:
+          bin: cubase-project-plugins
+          target: ${{ matrix.target }}
+          archive: $bin-$tag-${{ matrix.suffix }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Generate artifact attestation
+        uses: actions/attest-build-provenance@v2
+        with:
+          subject-path: "${{ steps.upload-rust-binary-action.outputs.archive }}.*"
