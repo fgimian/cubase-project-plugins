@@ -14,6 +14,10 @@ pub struct Cli {
     /// Config file path.
     #[arg(short, long, value_name = "PATH")]
     pub config_path: Option<PathBuf>,
+
+    /// Filter projects based on a plugin name using a wildcard pattern.
+    #[arg(name = "filter", short, long, value_name = "PATTERN")]
+    pub patterns: Vec<String>,
 }
 
 #[must_use]

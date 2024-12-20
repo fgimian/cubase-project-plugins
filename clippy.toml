@@ -1,4 +1,6 @@
 allowed-duplicate-crates = [
+    "thiserror",
+    "thiserror-impl",
     "windows-sys",
     "windows-targets",
     "windows_aarch64_gnullvm",

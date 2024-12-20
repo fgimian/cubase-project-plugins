@@ -10,6 +10,7 @@ use clap::Parser as _;
 use cli::Cli;
 use colored::Colorize as _;
 use glob::{MatchOptions, Pattern};
+use wildmatch::{WildMatch, WildMatchPattern};
 
 use crate::{config::Config, project::Plugin, reader::Reader};
 
@@ -76,21 +77,10 @@ fn run() -> Result<()> {
         })
         .collect::<Result<Vec<_>>>()?;
 
-    let mut project_bytes = Vec::new();
-    let mut plugin_counts = HashMap::new();
-    let mut plugin_counts_32 = HashMap::new();
-    let mut plugin_counts_64 = HashMap::new();
+    let mut processor = Processor::new(path_ignore_globs, cli.patterns);
 
     for project_path in &cli.project_paths {
-        if let Err(error) = process_cubase_project_path(
-            project_path,
-            &config,
-            &path_ignore_globs,
-            &mut project_bytes,
-            &mut plugin_counts_32,
-            &mut plugin_counts_64,
-            &mut plugin_counts,
-        ) {
+        if let Err(error) = processor.process_cubase_project_path(project_path, &config) {
             let project_path_heading = format!("Path: {project_path}").white().on_red();
             println!();
             println!("{project_path_heading}");
@@ -99,46 +89,101 @@ fn run() -> Result<()> {
         }
     }
 
-    print_summary(&plugin_counts_32, "32-bit");
-    print_summary(&plugin_counts_64, "64-bit");
-    print_summary(&plugin_counts, "All");
+    processor.print_summaries();
 
     Ok(())
 }
 
-fn process_cubase_project_path(
-    project_path: &str,
-    config: &Config,
-    path_ignore_globs: &[Pattern],
-    project_bytes: &mut Vec<u8>,
-    plugin_counts_32: &mut HashMap<Plugin, i32>,
-    plugin_counts_64: &mut HashMap<Plugin, i32>,
-    plugin_counts: &mut HashMap<Plugin, i32>,
-) -> Result<()> {
-    let project_file_path_pattern = Path::new(&project_path).join("**").join("*.cpr");
-    let Some(project_file_path_pattern) = project_file_path_pattern.to_str() else {
-        bail!("unable to convert the project file pattern to a string");
-    };
+struct Processor {
+    path_ignore_globs: Vec<Pattern>,
+    filter_patterns: Vec<WildMatchPattern<'*', '?'>>,
+    project_bytes: Vec<u8>,
+    plugin_counts_32: HashMap<Plugin, i32>,
+    plugin_counts_64: HashMap<Plugin, i32>,
+    plugin_counts: HashMap<Plugin, i32>,
+}
 
-    let project_file_paths = glob::glob_with(
-        project_file_path_pattern,
-        MatchOptions {
-            case_sensitive: false,
-            require_literal_separator: false,
-            require_literal_leading_dot: false,
-        },
-    )
-    .context("unable to glob for project files in the project path")?;
+impl Processor {
+    pub fn new(
+        path_ignore_globs: impl IntoIterator<Item = Pattern>,
+        filter_patterns: impl IntoIterator<Item = String>,
+    ) -> Self {
+        Self {
+            path_ignore_globs: path_ignore_globs.into_iter().collect(),
+            filter_patterns: filter_patterns
+                .into_iter()
+                .map(|pattern| WildMatch::new_case_insensitive(&pattern))
+                .collect::<Vec<_>>(),
+            project_bytes: Vec::new(),
+            plugin_counts_32: HashMap::new(),
+            plugin_counts_64: HashMap::new(),
+            plugin_counts: HashMap::new(),
+        }
+    }
 
-    for project_file_path in project_file_paths {
-        let project_file_path = project_file_path
-            .context("unable to glob a particular project file in the project path")?;
+    pub fn process_cubase_project_path(
+        &mut self,
+        project_path: &str,
+        config: &Config,
+    ) -> Result<()> {
+        let project_file_path_pattern = Path::new(&project_path).join("**").join("*.cpr");
+        let Some(project_file_path_pattern) = project_file_path_pattern.to_str() else {
+            bail!("unable to convert the project file pattern to a string");
+        };
 
-        if path_ignore_globs
-            .iter()
-            .any(|glob| glob.matches_path(&project_file_path))
+        let project_file_paths = glob::glob_with(
+            project_file_path_pattern,
+            MatchOptions {
+                case_sensitive: false,
+                require_literal_separator: false,
+                require_literal_leading_dot: false,
+            },
+        )
+        .context("unable to glob for project files in the project path")?;
+
+        for project_file_path in project_file_paths {
+            let project_file_path = project_file_path
+                .context("unable to glob a particular project file in the project path")?;
+
+            if self
+                .path_ignore_globs
+                .iter()
+                .any(|glob| glob.matches_path(&project_file_path))
+            {
+                continue;
+            }
+
+            if let Err(error) = self.process_cubase_project_file(&project_file_path, config) {
+                print_error(&error);
+            }
+        }
+
+        Ok(())
+    }
+
+    fn process_cubase_project_file(
+        &mut self,
+        project_file_path: &Path,
+        config: &Config,
+    ) -> Result<()> {
+        let mut file = File::open(project_file_path).context("unable to open project file")?;
+        file.read_to_end(&mut self.project_bytes)
+            .context("unable to read project file")?;
+
+        let reader = Reader::new(&self.project_bytes);
+        let project_details = reader
+            .get_project_details()
+            .context("unable to parse project file")?;
+        self.project_bytes.clear();
+
+        if !self.filter_patterns.is_empty()
+            && !project_details.plugins.iter().any(|plugin| {
+                self.filter_patterns
+                    .iter()
+                    .any(|pattern| pattern.matches(&plugin.name))
+            })
         {
-            continue;
+            return Ok(());
         }
 
         let project_file_path_heading = format!("Path: {}", project_file_path.display())
@@ -148,91 +193,67 @@ fn process_cubase_project_path(
         println!("{project_file_path_heading}");
         println!();
 
-        if let Err(error) = process_cubase_project_file(
-            &project_file_path,
-            config,
-            project_bytes,
-            plugin_counts_32,
-            plugin_counts_64,
-            plugin_counts,
-        ) {
-            print_error(&error);
+        let is_64_bit = matches!(
+            project_details.metadata.architecture.as_str(),
+            "WIN64" | "MAC64 LE"
+        );
+
+        if is_64_bit && !config.projects.report_64_bit
+            || !is_64_bit && !config.projects.report_32_bit
+        {
+            return Ok(());
         }
-    }
 
-    Ok(())
-}
+        let project_heading = format!(
+            "{application} {version} ({architecture})",
+            application = project_details.metadata.application,
+            version = project_details.metadata.version,
+            architecture = project_details.metadata.architecture
+        )
+        .blue();
+        println!("{project_heading}");
 
-fn process_cubase_project_file(
-    project_file_path: &Path,
-    config: &Config,
-    project_bytes: &mut Vec<u8>,
-    plugin_counts_32: &mut HashMap<Plugin, i32>,
-    plugin_counts_64: &mut HashMap<Plugin, i32>,
-    plugin_counts: &mut HashMap<Plugin, i32>,
-) -> Result<()> {
-    let mut file = File::open(project_file_path).context("unable to open project file")?;
-    file.read_to_end(project_bytes)
-        .context("unable to read project file")?;
+        if project_details.plugins.is_empty() {
+            return Ok(());
+        }
 
-    let reader = Reader::new(project_bytes);
-    let project_details = reader
-        .get_project_details()
-        .context("unable to parse project file")?;
-    project_bytes.clear();
+        let mut sorted_plugins = Vec::from_iter(project_details.plugins);
+        sorted_plugins.sort_by(|a, b| a.name.to_lowercase().cmp(&b.name.to_lowercase()));
 
-    let is_64_bit = matches!(
-        project_details.metadata.architecture.as_str(),
-        "WIN64" | "MAC64 LE"
-    );
-
-    if is_64_bit && !config.projects.report_64_bit || !is_64_bit && !config.projects.report_32_bit {
-        return Ok(());
-    }
-
-    let project_heading = format!(
-        "{application} {version} ({architecture})",
-        application = project_details.metadata.application,
-        version = project_details.metadata.version,
-        architecture = project_details.metadata.architecture
-    )
-    .blue();
-    println!("{project_heading}");
-
-    if project_details.plugins.is_empty() {
-        return Ok(());
-    }
-
-    let mut sorted_plugins = Vec::from_iter(project_details.plugins);
-    sorted_plugins.sort_by(|a, b| a.name.to_lowercase().cmp(&b.name.to_lowercase()));
-
-    println!();
-    for plugin in sorted_plugins
-        .iter()
-        .filter(|p| !config.plugins.guid_ignores.contains(&p.guid))
-        .filter(|p| !config.plugins.name_ignores.contains(&p.name))
-    {
-        plugin_counts
-            .entry(plugin.clone())
-            .and_modify(|count| *count += 1)
-            .or_insert(1);
-
-        if is_64_bit {
-            plugin_counts_64
+        println!();
+        for plugin in sorted_plugins
+            .iter()
+            .filter(|p| !config.plugins.guid_ignores.contains(&p.guid))
+            .filter(|p| !config.plugins.name_ignores.contains(&p.name))
+        {
+            self.plugin_counts
                 .entry(plugin.clone())
                 .and_modify(|count| *count += 1)
                 .or_insert(1);
-        } else {
-            plugin_counts_32
-                .entry(plugin.clone())
-                .and_modify(|count| *count += 1)
-                .or_insert(1);
+
+            if is_64_bit {
+                self.plugin_counts_64
+                    .entry(plugin.clone())
+                    .and_modify(|count| *count += 1)
+                    .or_insert(1);
+            } else {
+                self.plugin_counts_32
+                    .entry(plugin.clone())
+                    .and_modify(|count| *count += 1)
+                    .or_insert(1);
+            }
+
+            println!("    > {} : {}", plugin.guid, plugin.name);
         }
 
-        println!("    > {} : {}", plugin.guid, plugin.name);
+        Ok(())
     }
 
-    Ok(())
+    pub fn print_summaries(&self) {
+        print_summary(&self.plugin_counts_32, "32-bit");
+        print_summary(&self.plugin_counts_64, "64-bit");
+        print_summary(&self.plugin_counts, "all");
+    }
 }
 
 fn print_summary(plugin_counts: &HashMap<Plugin, i32>, description: &str) {
