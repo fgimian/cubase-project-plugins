@@ -176,8 +176,17 @@ impl Processor {
             .context("unable to parse project file")?;
         self.project_bytes.clear();
 
+        let mut sorted_plugins = Vec::from_iter(project_details.plugins);
+        sorted_plugins.sort_by(|a, b| a.name.to_lowercase().cmp(&b.name.to_lowercase()));
+
+        let filtered_plugins = sorted_plugins
+            .iter()
+            .filter(|p| !config.plugins.guid_ignores.contains(&p.guid))
+            .filter(|p| !config.plugins.name_ignores.contains(&p.name))
+            .collect::<Vec<_>>();
+
         if !self.filter_patterns.is_empty()
-            && !project_details.plugins.iter().any(|plugin| {
+            && !filtered_plugins.iter().any(|plugin| {
                 self.filter_patterns
                     .iter()
                     .any(|pattern| pattern.matches(&plugin.name))
@@ -213,19 +222,12 @@ impl Processor {
         .blue();
         println!("{project_heading}");
 
-        if project_details.plugins.is_empty() {
+        if filtered_plugins.is_empty() {
             return Ok(());
         }
 
-        let mut sorted_plugins = Vec::from_iter(project_details.plugins);
-        sorted_plugins.sort_by(|a, b| a.name.to_lowercase().cmp(&b.name.to_lowercase()));
-
         println!();
-        for plugin in sorted_plugins
-            .iter()
-            .filter(|p| !config.plugins.guid_ignores.contains(&p.guid))
-            .filter(|p| !config.plugins.name_ignores.contains(&p.name))
-        {
+        for plugin in filtered_plugins {
             self.plugin_counts
                 .entry(plugin.clone())
                 .and_modify(|count| *count += 1)
