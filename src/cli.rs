@@ -1,16 +1,16 @@
 use std::path::PathBuf;
 
-use clap::Parser;
+use clap::{Parser, ValueHint};
 
 #[derive(Parser, Debug)]
 #[command(author, version, about, long_about = None)]
 pub struct Cli {
     /// Directory paths to search for Cubase projects.
-    #[arg(value_name = "PROJECT_PATH", required = true)]
+    #[arg(value_name = "PROJECT_PATH", value_hint = ValueHint::DirPath, required = true)]
     pub project_paths: Vec<String>,
 
     /// Config file path.
-    #[arg(short, long, value_name = "PATH")]
+    #[arg(short, long, value_name = "PATH", value_hint = ValueHint::FilePath)]
     pub config_path: Option<PathBuf>,
 
     /// Filter projects based on a plugin name using a wildcard pattern.
