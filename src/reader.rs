@@ -446,7 +446,7 @@ mod tests {
         assert_eq!(actual_plugins_sorted, expected_plugins);
     }
 
-    #[rstest]
+    #[test]
     fn get_project_details_sx3() {
         let project_path = PathBuf::from("testdata").join("Example Project (Cubase SX3).cpr");
         let project_bytes = fs::read(project_path).unwrap();
@@ -491,7 +491,7 @@ mod tests {
         assert_eq!(project_details, Err(expected_error));
     }
 
-    #[rstest]
+    #[test]
     fn get_project_details_invalid_project() {
         let project_bytes = Vec::new();
 
