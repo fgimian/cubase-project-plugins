@@ -3,10 +3,16 @@ mod config;
 mod project;
 mod reader;
 
-use std::{collections::HashMap, fs, fs::File, io::Read, path::Path, process};
+use std::{
+    collections::HashMap,
+    fs::{self, File},
+    io::{self, Read},
+    path::Path,
+    process,
+};
 
 use anyhow::{bail, Context, Error, Result};
-use clap::Parser as _;
+use clap::{CommandFactory as _, Parser as _};
 use cli::Cli;
 use colored::Colorize as _;
 use glob::{MatchOptions, Pattern};
@@ -38,6 +44,13 @@ fn main() {
 fn run() -> Result<()> {
     // Parse CLI arguments.
     let cli = Cli::parse();
+
+    // Display shell completions.
+    if let Some(shell) = cli.completions {
+        let mut cmd = Cli::command();
+        clap_complete::generate(shell, &mut cmd, env!("CARGO_PKG_NAME"), &mut io::stdout());
+        return Ok(());
+    }
 
     // Load the user config.
     let config_path = cli
