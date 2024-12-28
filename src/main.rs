@@ -11,7 +11,7 @@ use std::{
     process,
 };
 
-use anyhow::{bail, Context, Error, Result};
+use anyhow::{anyhow, bail, Context, Error, Result};
 use clap::{CommandFactory as _, Parser as _};
 use cli::Cli;
 use colored::Colorize as _;
@@ -93,8 +93,18 @@ fn run() -> Result<()> {
     let mut processor = Processor::new(path_ignore_globs, cli.patterns);
 
     for project_path in &cli.project_paths {
+        let project_path = Path::new(project_path);
+        if !project_path.is_dir() {
+            let project_path_heading = format!("Path: {}", project_path.display()).white().on_red();
+            println!();
+            println!("{project_path_heading}");
+            println!();
+            print_error(&anyhow!("the directory path does not exist"));
+            continue;
+        }
+
         if let Err(error) = processor.process_cubase_project_path(project_path, &config) {
-            let project_path_heading = format!("Path: {project_path}").white().on_red();
+            let project_path_heading = format!("Path: {}", project_path.display()).white().on_red();
             println!();
             println!("{project_path_heading}");
             println!();
@@ -136,10 +146,10 @@ impl Processor {
 
     pub fn process_cubase_project_path(
         &mut self,
-        project_path: &str,
+        project_path: &Path,
         config: &Config,
     ) -> Result<()> {
-        let project_file_path_pattern = Path::new(&project_path).join("**").join("*.cpr");
+        let project_file_path_pattern = project_path.join("**").join("*.cpr");
         let Some(project_file_path_pattern) = project_file_path_pattern.to_str() else {
             bail!("unable to convert the project file pattern to a string");
         };
