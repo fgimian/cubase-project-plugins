@@ -24,7 +24,7 @@ pub struct Cli {
     pub patterns: Vec<String>,
 
     /// Generate shell completions.
-    #[arg(long)]
+    #[arg(long, value_name = "SHELL")]
     pub completions: Option<Shell>,
 }
 
