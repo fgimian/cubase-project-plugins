@@ -165,8 +165,15 @@ impl Processor {
         .context("unable to glob for project files in the project path")?;
 
         for project_file_path in project_file_paths {
-            let project_file_path = project_file_path
-                .context("unable to glob a particular project file in the project path")?;
+            let project_file_path = match project_file_path {
+                Ok(project_file_path) => project_file_path,
+                Err(error) => {
+                    let error = Error::from(error)
+                        .context("unable to glob a particular project file in the project path");
+                    print_error(&error);
+                    continue;
+                }
+            };
 
             if self
                 .path_ignore_globs
