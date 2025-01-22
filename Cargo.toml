@@ -17,19 +17,20 @@ correctness = { level = "warn", priority = 1 }
 pedantic = { level = "warn", priority = 1 }
 nursery = { level = "warn", priority = 1 }
 cargo = { level = "warn", priority = 1 }
+multiple_crate_versions = { level = "allow", priority = 2 }
 
 [dependencies]
 anyhow = "1.0.95"
-clap = { version = "4.5.24", features = ["derive"] }
-clap_complete = "4.5.41"
+clap = { version = "4.5.27", features = ["derive"] }
+clap_complete = "4.5.42"
 colored = "3.0.0"
-dirs = "5.0.1"
+dirs = "6.0.0"
 glob = "0.3.2"
 serde = { version = "1.0.217", features = ["derive"] }
-thiserror = "2.0.10"
+thiserror = "2.0.11"
 toml = "0.8.19"
 wildmatch = "2.4.0"
 
 [dev-dependencies]
 rstest = "0.24.0"
-similar-asserts = "1.6.0"
+similar-asserts = "1.6.1"
