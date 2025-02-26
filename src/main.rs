@@ -11,7 +11,7 @@ use std::{
     process,
 };
 
-use anyhow::{anyhow, bail, Context, Error, Result};
+use anyhow::{Context, Error, Result, anyhow, bail};
 use clap::{CommandFactory as _, Parser as _};
 use cli::Cli;
 use colored::Colorize as _;
