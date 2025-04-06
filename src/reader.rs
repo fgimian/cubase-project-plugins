@@ -89,7 +89,7 @@ impl<'a> Reader<'a> {
         match self.get_bytes(index, APP_VERSION_SEARCH_TERM.len()) {
             Some(APP_VERSION_SEARCH_TERM) => (),
             _ => return Ok(None),
-        };
+        }
         index += APP_VERSION_SEARCH_TERM.len() + 9;
 
         let (application, len) = self.get_token(index).map_err(|_| Error::NoApplication)?;
@@ -132,7 +132,7 @@ impl<'a> Reader<'a> {
         match self.get_bytes(index, PLUGIN_UID_SEARCH_TERM.len()) {
             Some(PLUGIN_UID_SEARCH_TERM) => (),
             _ => return Ok(None),
-        };
+        }
         index += PLUGIN_UID_SEARCH_TERM.len() + 22;
 
         let (guid, len) = self.get_token(index).map_err(|_| Error::NoPluginGUID)?;
