@@ -9,7 +9,7 @@ of Cubase the project was created with along with a list all the plugins used (w
 
 ## Limitations
 
-The tool works for projects created in Cubase 4 or later.  Older projects (e.g. those created on
+The tool works for projects created in Cubase 4 or later. Older projects (e.g. those created on
 SX3) will only show the Cubase version but no plugins will be listed and architecture may be
 assumed to be 32-bit.
 
@@ -36,8 +36,8 @@ The config file should look similar to that below:
 ```toml
 # The path patterns to ignore.
 path_ignore_patterns = [
-    "**/Ignore Path 1/*.cpr",
-    "**/Ignore Path 2/*.cpr",
+  "**/Ignore Path 1/*.cpr",
+  "**/Ignore Path 2/*.cpr",
 ]
 
 [projects]
@@ -48,14 +48,14 @@ report_64_bit = true
 [plugins]
 # Plugin GUIDs to ignore and exclude from output.
 guid_ignores = [
-    "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
-    "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
+  "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
+  "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
 ]
 
 # Plugin names to ignore and exclude from output.
 name_ignores = [
-    "Plugin1",
-    "Plugin2",
+  "Plugin1",
+  "Plugin2",
 ]
 ```
 

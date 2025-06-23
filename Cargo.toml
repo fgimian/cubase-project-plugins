@@ -1,13 +1,13 @@
 [package]
 name = "cubase-project-plugins"
 version = "0.1.2"
-edition = "2024"
-description = "Displays plugins used in your Cubase projects along with the Cubase version the project was created with."
-repository = "https://github.com/fgimian/cubase-project-plugins"
-readme = "README.md"
-license = "MIT"
-keywords = ["music-production", "cubase"]
 categories = ["command-line-interface"]
+edition = "2024"
+keywords = ["music-production", "cubase"]
+license = "MIT"
+readme = "README.md"
+repository = "https://github.com/fgimian/cubase-project-plugins"
+description = "Displays plugins used in your Cubase projects along with the Cubase version the project was created with."
 
 [lints.clippy]
 expect_used = "warn"
