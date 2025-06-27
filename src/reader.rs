@@ -59,12 +59,12 @@ impl<'a> Reader<'a> {
             }
 
             // Check whether the next set of bytes are related to the Cubase version.
-            if metadata.is_none() {
-                if let Some((found_metadata, updated_index)) = self.search_metadata(index)? {
-                    metadata = Some(found_metadata);
-                    index = updated_index;
-                    continue;
-                }
+            if metadata.is_none()
+                && let Some((found_metadata, updated_index)) = self.search_metadata(index)?
+            {
+                metadata = Some(found_metadata);
+                index = updated_index;
+                continue;
             }
 
             // Check whether the next set of bytes relate to a plugin.
