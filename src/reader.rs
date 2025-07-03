@@ -370,7 +370,7 @@ mod tests {
             dither_plugin_name: "Lin Dither".to_string()
         },
     )]
-    fn get_project_details(
+    fn test_get_project_details(
         #[case] filename: &str,
         #[case] expected_metadata: Metadata,
         #[case] plugin_properties: PluginProperties,
@@ -447,7 +447,7 @@ mod tests {
     }
 
     #[test]
-    fn get_project_details_sx3() {
+    fn test_get_project_details_sx3() {
         let project_path = PathBuf::from("testdata").join("Example Project (Cubase SX3).cpr");
         let project_bytes = fs::read(project_path).unwrap();
 
@@ -481,7 +481,7 @@ mod tests {
         "Truncated Project (Original Plugin Name).cpr",
         Error::NoOriginalPluginName
     )]
-    fn get_project_details_truncated(#[case] filename: &str, #[case] expected_error: Error) {
+    fn test_get_project_details_truncated(#[case] filename: &str, #[case] expected_error: Error) {
         let project_path = PathBuf::from("testdata").join(filename);
         let project_bytes = fs::read(project_path).unwrap();
 
@@ -492,7 +492,7 @@ mod tests {
     }
 
     #[test]
-    fn get_project_details_invalid_project() {
+    fn test_get_project_details_invalid_project() {
         let project_bytes = Vec::new();
 
         let reader = Reader::new(&project_bytes);
