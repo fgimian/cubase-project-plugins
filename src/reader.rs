@@ -46,7 +46,7 @@ impl<'a> Reader<'a> {
     /// Obtains all project details including Cubase version and plugins used and returns an
     /// instance of Project containing project details.
     pub fn get_project_details(&self) -> Result<Project, Error> {
-        let mut metadata: Option<Metadata> = None;
+        let mut metadata = None;
         let mut plugins = HashSet::new();
 
         let mut index = 0;
