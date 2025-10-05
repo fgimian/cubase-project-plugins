@@ -13,12 +13,11 @@ use std::{
 
 use anyhow::{Context, Error, Result, anyhow, bail};
 use clap::{CommandFactory as _, Parser as _};
-use cli::Cli;
 use colored::Colorize as _;
 use glob::{MatchOptions, Pattern};
 use wildmatch::{WildMatch, WildMatchPattern};
 
-use crate::{config::Config, project::Plugin, reader::Reader};
+use crate::{cli::Cli, config::Config, project::Plugin, reader::Reader};
 
 fn print_error(error: &Error) {
     for (index, cause) in error.chain().enumerate() {
