@@ -48,6 +48,7 @@ impl<'a> Reader<'a> {
     pub fn get_project_details(&self) -> Result<Project, Error> {
         let mut metadata = None;
         let mut plugins = HashSet::new();
+        let uses_rif2_format = &self.project_bytes[0..=3] == b"RIF2";
 
         let mut index = 0;
         while index < self.project_bytes.len() {
@@ -60,7 +61,8 @@ impl<'a> Reader<'a> {
 
             // Check whether the next set of bytes are related to the Cubase version.
             if metadata.is_none()
-                && let Some((found_metadata, updated_index)) = self.search_metadata(index)?
+                && let Some((found_metadata, updated_index)) =
+                    self.search_metadata(index, uses_rif2_format)?
             {
                 metadata = Some(found_metadata);
                 index = updated_index;
@@ -83,7 +85,11 @@ impl<'a> Reader<'a> {
         )
     }
 
-    fn search_metadata(&self, index: usize) -> Result<Option<(Metadata, usize)>, Error> {
+    fn search_metadata(
+        &self,
+        index: usize,
+        uses_rif2_format: bool,
+    ) -> Result<Option<(Metadata, usize)>, Error> {
         let mut index = index;
 
         match self.get_bytes(index, APP_VERSION_SEARCH_TERM.len()) {
@@ -91,6 +97,9 @@ impl<'a> Reader<'a> {
             _ => return Ok(None),
         }
         index += APP_VERSION_SEARCH_TERM.len() + 9;
+        if uses_rif2_format {
+            index += 4;
+        }
 
         let (application, len) = self.get_token(index).map_err(|_| Error::NoApplication)?;
         index += len + 3;
