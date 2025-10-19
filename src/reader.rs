@@ -13,6 +13,8 @@ pub enum Error {
     LengthBeyondEOF,
     #[error("the token size goes beyond the end of the project")]
     TokenBeyondEOF,
+    #[error("the project header was unexpected")]
+    UnexpectedHeader,
     #[error("the project has no metadata and appears to be corrupt")]
     CorruptProject,
     #[error("unable to obtain the application name")]
@@ -29,6 +31,12 @@ pub enum Error {
     NoTokenAfterPluginName,
     #[error("unable to obtain an original plugin name")]
     NoOriginalPluginName,
+}
+
+#[derive(Debug, PartialEq, Eq, Clone, Copy)]
+enum Format {
+    Riff,
+    Rif2,
 }
 
 /// Determines the used plugins in a Cubase project along with related version of Cubase which the
@@ -48,7 +56,12 @@ impl<'a> Reader<'a> {
     pub fn get_project_details(&self) -> Result<Project, Error> {
         let mut metadata = None;
         let mut plugins = HashSet::new();
-        let uses_rif2_format = &self.project_bytes[0..=3] == b"RIF2";
+
+        let format = match self.project_bytes.get(0..4) {
+            Some(b"RIFF") => Format::Riff,
+            Some(b"RIF2") => Format::Rif2,
+            _ => return Err(Error::UnexpectedHeader),
+        };
 
         let mut index = 0;
         while index < self.project_bytes.len() {
@@ -62,7 +75,7 @@ impl<'a> Reader<'a> {
             // Check whether the next set of bytes are related to the Cubase version.
             if metadata.is_none()
                 && let Some((found_metadata, updated_index)) =
-                    self.search_metadata(index, uses_rif2_format)?
+                    self.search_metadata(index, format)?
             {
                 metadata = Some(found_metadata);
                 index = updated_index;
@@ -88,7 +101,7 @@ impl<'a> Reader<'a> {
     fn search_metadata(
         &self,
         index: usize,
-        uses_rif2_format: bool,
+        format: Format,
     ) -> Result<Option<(Metadata, usize)>, Error> {
         let mut index = index;
 
@@ -97,7 +110,7 @@ impl<'a> Reader<'a> {
             _ => return Ok(None),
         }
         index += APP_VERSION_SEARCH_TERM.len() + 9;
-        if uses_rif2_format {
+        if format == Format::Rif2 {
             index += 4;
         }
 
@@ -379,6 +392,19 @@ mod tests {
             dither_plugin_name: "Lin Dither".to_string()
         },
     )]
+    #[case::cubase_13(
+        "Example Project (Cubase 14).cpr",
+        Metadata {
+            application: "Cubase".to_string(),
+            version: "14.0.30".to_string(),
+            release_date: "May 22 2025".to_string(),
+            architecture: "WIN64".to_string(),
+        },
+        PluginProperties {
+            includes_channel_plugins: true,
+            dither_plugin_name: "Lin Dither".to_string()
+        },
+    )]
     fn test_get_project_details(
         #[case] filename: &str,
         #[case] expected_metadata: Metadata,
@@ -501,10 +527,20 @@ mod tests {
     }
 
     #[test]
-    fn test_get_project_details_invalid_project() {
-        let project_bytes = Vec::new();
+    fn test_get_project_details_invalid_header() {
+        let project_bytes = b"POOP";
 
-        let reader = Reader::new(&project_bytes);
+        let reader = Reader::new(project_bytes);
+        let project_details = reader.get_project_details();
+
+        assert_eq!(project_details, Err(Error::UnexpectedHeader));
+    }
+
+    #[test]
+    fn test_get_project_details_invalid_project() {
+        let project_bytes = b"RIFF";
+
+        let reader = Reader::new(project_bytes);
         let project_details = reader.get_project_details();
 
         assert_eq!(project_details, Err(Error::CorruptProject));
