@@ -220,7 +220,7 @@ impl Processor {
             && !filtered_plugins.iter().any(|plugin| {
                 self.filter_patterns
                     .iter()
-                    .any(|pattern| pattern.matches(&plugin.name))
+                    .any(|pattern| pattern.matches(&plugin.name) || pattern.matches(&plugin.guid))
             })
         {
             return Ok(());
