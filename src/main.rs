@@ -123,6 +123,7 @@ struct Processor {
     plugin_counts_32: HashMap<Plugin, i32>,
     plugin_counts_64: HashMap<Plugin, i32>,
     plugin_counts: HashMap<Plugin, i32>,
+    cubase_version_counts: HashMap<String, i32>,
 }
 
 impl Processor {
@@ -140,6 +141,7 @@ impl Processor {
             plugin_counts_32: HashMap::new(),
             plugin_counts_64: HashMap::new(),
             plugin_counts: HashMap::new(),
+            cubase_version_counts: HashMap::new(),
         }
     }
 
@@ -242,18 +244,24 @@ impl Processor {
             return Ok(());
         }
 
-        let project_heading = format!(
+        let cubase_version = format!(
             "{application} {version} ({architecture})",
             application = project_details.metadata.application,
             version = project_details.metadata.version,
             architecture = project_details.metadata.architecture
-        )
-        .blue();
+        );
+
+        let project_heading = cubase_version.blue();
         println!("{project_heading}");
 
         if filtered_plugins.is_empty() {
             return Ok(());
         }
+
+        self.cubase_version_counts
+            .entry(cubase_version)
+            .and_modify(|count| *count += 1)
+            .or_insert(1);
 
         println!();
         for plugin in filtered_plugins {
@@ -281,13 +289,14 @@ impl Processor {
     }
 
     pub fn print_summaries(&self) {
-        print_summary(&self.plugin_counts_32, "32-bit");
-        print_summary(&self.plugin_counts_64, "64-bit");
-        print_summary(&self.plugin_counts, "all");
+        print_plugin_summary(&self.plugin_counts_32, "32-bit");
+        print_plugin_summary(&self.plugin_counts_64, "64-bit");
+        print_plugin_summary(&self.plugin_counts, "all");
+        print_cubase_version_summary(&self.cubase_version_counts);
     }
 }
 
-fn print_summary(plugin_counts: &HashMap<Plugin, i32>, description: &str) {
+fn print_plugin_summary(plugin_counts: &HashMap<Plugin, i32>, description: &str) {
     if plugin_counts.is_empty() {
         return;
     }
@@ -304,6 +313,25 @@ fn print_summary(plugin_counts: &HashMap<Plugin, i32>, description: &str) {
     sorted_plugin_counts.sort_by(|a, b| a.0.name.to_lowercase().cmp(&b.0.name.to_lowercase()));
 
     for (plugin, count) in &sorted_plugin_counts {
-        println!("    > {} : {} ({})", plugin.guid, plugin.name, count);
+        println!("    > {} : {} ({count})", plugin.guid, plugin.name);
+    }
+}
+
+fn print_cubase_version_summary(cubase_version_counts: &HashMap<String, i32>) {
+    if cubase_version_counts.is_empty() {
+        return;
+    }
+
+    let summary_heading = "Summary: Cubase Versions Used In Projects".white().on_red();
+
+    println!();
+    println!("{summary_heading}");
+    println!();
+
+    let mut sorted_cubase_version_counts = Vec::from_iter(cubase_version_counts);
+    sorted_cubase_version_counts.sort_by(|a, b| natord::compare_ignore_case(a.0, b.0));
+
+    for (cubase_version, count) in &sorted_cubase_version_counts {
+        println!("    > {cubase_version} ({count})");
     }
 }
