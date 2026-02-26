@@ -89,7 +89,12 @@ fn run() -> Result<()> {
         })
         .collect::<Result<Vec<_>>>()?;
 
-    let mut processor = Processor::new(path_ignore_globs, cli.patterns);
+    let mut processor = Processor::new(
+        config,
+        path_ignore_globs,
+        cli.patterns,
+        cli.only_show_filtered,
+    );
 
     for project_path in &cli.project_paths {
         let project_path = Path::new(project_path);
@@ -102,7 +107,7 @@ fn run() -> Result<()> {
             continue;
         }
 
-        if let Err(error) = processor.process_cubase_project_path(project_path, &config) {
+        if let Err(error) = processor.process_cubase_project_path(project_path) {
             let project_path_heading = format!("Path: {}", project_path.display()).white().on_red();
             println!();
             println!("{project_path_heading}");
@@ -117,6 +122,7 @@ fn run() -> Result<()> {
 }
 
 struct Processor {
+    config: Config,
     path_ignore_globs: Vec<Pattern>,
     filter_patterns: Vec<WildMatchPattern<'*', '?'>>,
     project_bytes: Vec<u8>,
@@ -124,14 +130,18 @@ struct Processor {
     plugin_counts_64: HashMap<Plugin, i32>,
     plugin_counts: HashMap<Plugin, i32>,
     cubase_version_counts: HashMap<String, i32>,
+    only_show_filtered: bool,
 }
 
 impl Processor {
     pub fn new(
+        config: Config,
         path_ignore_globs: impl IntoIterator<Item = Pattern>,
         filter_patterns: impl IntoIterator<Item = String>,
+        only_show_filtered: bool,
     ) -> Self {
         Self {
+            config,
             path_ignore_globs: path_ignore_globs.into_iter().collect(),
             filter_patterns: filter_patterns
                 .into_iter()
@@ -142,14 +152,11 @@ impl Processor {
             plugin_counts_64: HashMap::new(),
             plugin_counts: HashMap::new(),
             cubase_version_counts: HashMap::new(),
+            only_show_filtered,
         }
     }
 
-    pub fn process_cubase_project_path(
-        &mut self,
-        project_path: &Path,
-        config: &Config,
-    ) -> Result<()> {
+    pub fn process_cubase_project_path(&mut self, project_path: &Path) -> Result<()> {
         let project_file_path_pattern = project_path.join("**").join("*.cpr");
         let Some(project_file_path_pattern) = project_file_path_pattern.to_str() else {
             bail!("unable to convert the project file pattern to a string");
@@ -184,7 +191,7 @@ impl Processor {
                 continue;
             }
 
-            if let Err(error) = self.process_cubase_project_file(&project_file_path, config) {
+            if let Err(error) = self.process_cubase_project_file(&project_file_path) {
                 print_error(&error);
             }
         }
@@ -192,11 +199,15 @@ impl Processor {
         Ok(())
     }
 
-    fn process_cubase_project_file(
-        &mut self,
-        project_file_path: &Path,
-        config: &Config,
-    ) -> Result<()> {
+    fn matches_filters(&self, plugin: &Plugin) -> bool {
+        self.filter_patterns.is_empty()
+            || self
+                .filter_patterns
+                .iter()
+                .any(|pattern| pattern.matches(&plugin.name) || pattern.matches(&plugin.guid))
+    }
+
+    fn process_cubase_project_file(&mut self, project_file_path: &Path) -> Result<()> {
         let mut file = File::open(project_file_path).context("unable to open project file")?;
         file.read_to_end(&mut self.project_bytes)
             .context("unable to read project file")?;
@@ -212,16 +223,14 @@ impl Processor {
 
         let filtered_plugins = sorted_plugins
             .iter()
-            .filter(|p| !config.plugins.guid_ignores.contains(&p.guid))
-            .filter(|p| !config.plugins.name_ignores.contains(&p.name))
+            .filter(|p| !self.config.plugins.guid_ignores.contains(&p.guid))
+            .filter(|p| !self.config.plugins.name_ignores.contains(&p.name))
             .collect::<Vec<_>>();
 
         if !self.filter_patterns.is_empty()
-            && !filtered_plugins.iter().any(|plugin| {
-                self.filter_patterns
-                    .iter()
-                    .any(|pattern| pattern.matches(&plugin.name) || pattern.matches(&plugin.guid))
-            })
+            && !filtered_plugins
+                .iter()
+                .any(|plugin| self.matches_filters(plugin))
         {
             return Ok(());
         }
@@ -238,8 +247,8 @@ impl Processor {
             "WIN64" | "MAC64 LE"
         );
 
-        if is_64_bit && !config.projects.report_64_bit
-            || !is_64_bit && !config.projects.report_32_bit
+        if is_64_bit && !self.config.projects.report_64_bit
+            || !is_64_bit && !self.config.projects.report_32_bit
         {
             return Ok(());
         }
@@ -282,56 +291,60 @@ impl Processor {
                     .or_insert(1);
             }
 
-            println!("    > {} : {}", plugin.guid, plugin.name);
+            if !self.only_show_filtered || self.matches_filters(plugin) {
+                println!("    > {} : {}", plugin.guid, plugin.name);
+            }
         }
 
         Ok(())
     }
 
     pub fn print_summaries(&self) {
-        print_plugin_summary(&self.plugin_counts_32, "32-bit");
-        print_plugin_summary(&self.plugin_counts_64, "64-bit");
-        print_plugin_summary(&self.plugin_counts, "all");
-        print_cubase_version_summary(&self.cubase_version_counts);
-    }
-}
-
-fn print_plugin_summary(plugin_counts: &HashMap<Plugin, i32>, description: &str) {
-    if plugin_counts.is_empty() {
-        return;
+        self.print_plugin_summary(&self.plugin_counts_32, "32-bit");
+        self.print_plugin_summary(&self.plugin_counts_64, "64-bit");
+        self.print_plugin_summary(&self.plugin_counts, "all");
+        self.print_cubase_version_summary();
     }
 
-    let summary_heading = format!("Summary: Plugins Used In {description} Projects")
-        .white()
-        .on_red();
+    fn print_plugin_summary(&self, plugin_counts: &HashMap<Plugin, i32>, description: &str) {
+        if plugin_counts.is_empty() {
+            return;
+        }
 
-    println!();
-    println!("{summary_heading}");
-    println!();
+        let summary_heading = format!("Summary: Plugins Used In {description} Projects")
+            .white()
+            .on_red();
 
-    let mut sorted_plugin_counts = Vec::from_iter(plugin_counts);
-    sorted_plugin_counts.sort_by(|a, b| a.0.name.to_lowercase().cmp(&b.0.name.to_lowercase()));
+        println!();
+        println!("{summary_heading}");
+        println!();
 
-    for (plugin, count) in &sorted_plugin_counts {
-        println!("    > {} : {} ({count})", plugin.guid, plugin.name);
+        let mut sorted_plugin_counts = Vec::from_iter(plugin_counts);
+        sorted_plugin_counts.sort_by(|a, b| a.0.name.to_lowercase().cmp(&b.0.name.to_lowercase()));
+
+        for (plugin, count) in &sorted_plugin_counts {
+            if !self.only_show_filtered || self.matches_filters(plugin) {
+                println!("    > {} : {} ({count})", plugin.guid, plugin.name);
+            }
+        }
     }
-}
 
-fn print_cubase_version_summary(cubase_version_counts: &HashMap<String, i32>) {
-    if cubase_version_counts.is_empty() {
-        return;
-    }
+    fn print_cubase_version_summary(&self) {
+        if self.cubase_version_counts.is_empty() {
+            return;
+        }
 
-    let summary_heading = "Summary: Cubase Versions Used In Projects".white().on_red();
+        let summary_heading = "Summary: Cubase Versions Used In Projects".white().on_red();
 
-    println!();
-    println!("{summary_heading}");
-    println!();
+        println!();
+        println!("{summary_heading}");
+        println!();
 
-    let mut sorted_cubase_version_counts = Vec::from_iter(cubase_version_counts);
-    sorted_cubase_version_counts.sort_by(|a, b| natord::compare_ignore_case(a.0, b.0));
+        let mut sorted_cubase_version_counts = Vec::from_iter(&self.cubase_version_counts);
+        sorted_cubase_version_counts.sort_by(|a, b| natord::compare_ignore_case(a.0, b.0));
 
-    for (cubase_version, count) in &sorted_cubase_version_counts {
-        println!("    > {cubase_version} ({count})");
+        for (cubase_version, count) in &sorted_cubase_version_counts {
+            println!("    > {cubase_version} ({count})");
+        }
     }
 }

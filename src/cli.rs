@@ -23,6 +23,10 @@ pub struct Cli {
     #[arg(name = "filter", short, long, value_name = "PATTERN")]
     pub patterns: Vec<String>,
 
+    /// Only show filtered plugins for each project.
+    #[arg(short, long)]
+    pub only_show_filtered: bool,
+
     /// Generate shell completions.
     #[arg(long, value_name = "SHELL")]
     pub completions: Option<Shell>,
