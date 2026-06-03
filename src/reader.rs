@@ -417,7 +417,7 @@ mod tests {
         let project_details = reader.get_project_details().unwrap();
 
         let mut actual_plugins_sorted = Vec::from_iter(project_details.plugins);
-        actual_plugins_sorted.sort_by(|a, b| a.guid.to_lowercase().cmp(&b.guid.to_lowercase()));
+        actual_plugins_sorted.sort_by_key(|a| a.guid.to_lowercase());
 
         let mut expected_plugins = vec![Plugin {
             guid: "1C3A662167D347A99F7D797EA4911CDB".to_string(),

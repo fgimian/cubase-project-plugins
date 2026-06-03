@@ -219,7 +219,7 @@ impl Processor {
         self.project_bytes.clear();
 
         let mut sorted_plugins = Vec::from_iter(project_details.plugins);
-        sorted_plugins.sort_by(|a, b| a.name.to_lowercase().cmp(&b.name.to_lowercase()));
+        sorted_plugins.sort_by_key(|a| a.name.to_lowercase());
 
         let filtered_plugins = sorted_plugins
             .iter()
@@ -320,7 +320,7 @@ impl Processor {
         println!();
 
         let mut sorted_plugin_counts = Vec::from_iter(plugin_counts);
-        sorted_plugin_counts.sort_by(|a, b| a.0.name.to_lowercase().cmp(&b.0.name.to_lowercase()));
+        sorted_plugin_counts.sort_by_key(|a| a.0.name.to_lowercase());
 
         for (plugin, count) in &sorted_plugin_counts {
             if !self.only_show_filtered || self.matches_filters(plugin) {
