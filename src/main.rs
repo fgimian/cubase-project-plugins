@@ -263,14 +263,14 @@ impl Processor {
         let project_heading = cubase_version.blue();
         println!("{project_heading}");
 
-        if filtered_plugins.is_empty() {
-            return Ok(());
-        }
-
         self.cubase_version_counts
             .entry(cubase_version)
             .and_modify(|count| *count += 1)
             .or_insert(1);
+
+        if filtered_plugins.is_empty() {
+            return Ok(());
+        }
 
         println!();
         for plugin in filtered_plugins {
