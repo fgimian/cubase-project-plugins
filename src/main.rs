@@ -235,13 +235,6 @@ impl Processor {
             return Ok(());
         }
 
-        let project_file_path_heading = format!("Path: {}", project_file_path.display())
-            .white()
-            .on_red();
-        println!();
-        println!("{project_file_path_heading}");
-        println!();
-
         let is_64_bit = matches!(
             project_details.metadata.architecture.as_str(),
             "WIN64" | "MAC64 LE"
@@ -252,6 +245,13 @@ impl Processor {
         {
             return Ok(());
         }
+
+        let project_file_path_heading = format!("Path: {}", project_file_path.display())
+            .white()
+            .on_red();
+        println!();
+        println!("{project_file_path_heading}");
+        println!();
 
         let cubase_version = format!(
             "{application} {version} ({architecture})",
