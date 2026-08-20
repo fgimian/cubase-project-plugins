@@ -3,9 +3,9 @@ use serde::Deserialize;
 /// Project specific configuration for the tool.
 #[derive(Debug, Deserialize)]
 pub struct Projects {
-    /// Whether 32-bit projects should be reported..
+    /// Whether 32-bit projects should be reported.
     pub report_32_bit: bool,
-    /// Whether 64-bit projects should be reported..
+    /// Whether 64-bit projects should be reported.
     pub report_64_bit: bool,
 }
 

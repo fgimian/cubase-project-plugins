@@ -5,7 +5,7 @@
 [![Latest Release](https://img.shields.io/github/v/release/fgimian/cubase-project-plugins?include_prereleases)](https://github.com/fgimian/cubase-project-plugins/releases)
 
 This program will analyse a directory containing Cubase projects recursively and show the version
-of Cubase the project was created with along with a list all the plugins used (with their GUIDs).
+of Cubase the project was created with along with a list of all the plugins used (with their GUIDs).
 
 ## Limitations
 
