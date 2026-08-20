@@ -29,7 +29,7 @@ fn print_error(error: &Error) {
         if index == 1 {
             eprintln!("{}", "caused by:".red());
         }
-        println!("    {}: {cause}", index - 1);
+        eprintln!("    {}: {cause}", index - 1);
     }
 }
 
