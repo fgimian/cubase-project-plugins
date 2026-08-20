@@ -1,4 +1,4 @@
-# Cubase Project
+# Cubase Project Plugins
 
 [![Build Status](https://github.com/fgimian/cubase-project-plugins/actions/workflows/release.yml/badge.svg?branch=main)](https://github.com/fgimian/cubase-project-plugins/actions)
 [![License](https://img.shields.io/github/license/fgimian/cubase-project-plugins)](https://github.com/fgimian/cubase-project-plugins/blob/main/LICENSE)
@@ -29,7 +29,7 @@ You may now run the tool using the `cubase-project-plugins` executable. Please u
 
 You may optionally create a TOML config file for the utility which includes certain paths and
 plugins to exclude from output. The default location where the tool will search for the config
-file is expected is **~/.config/cubase-project-plugins.toml**.
+file is **~/.config/cubase-project-plugins.toml**.
 
 The config file should look similar to that below:
 
