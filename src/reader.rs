@@ -392,7 +392,7 @@ mod tests {
             dither_plugin_name: "Lin Dither".to_string()
         },
     )]
-    #[case::cubase_13(
+    #[case::cubase_14(
         "Example Project (Cubase 14).cpr",
         Metadata {
             application: "Cubase".to_string(),
