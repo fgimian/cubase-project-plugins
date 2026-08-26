@@ -208,6 +208,8 @@ impl Processor {
     }
 
     fn process_cubase_project_file(&mut self, project_file_path: &Path) -> Result<()> {
+        self.project_bytes.clear();
+
         let mut file = File::open(project_file_path).context("unable to open project file")?;
         file.read_to_end(&mut self.project_bytes)
             .context("unable to read project file")?;
@@ -216,7 +218,6 @@ impl Processor {
         let project_details = reader
             .get_project_details()
             .context("unable to parse project file")?;
-        self.project_bytes.clear();
 
         let mut sorted_plugins = Vec::from_iter(project_details.plugins);
         sorted_plugins.sort_by_key(|a| a.name.to_lowercase());
