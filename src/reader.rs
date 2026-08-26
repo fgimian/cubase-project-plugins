@@ -205,7 +205,7 @@ impl<'a> Reader<'a> {
             .get_bytes(index + 1, len)
             .ok_or(Error::TokenBeyondEOF)?;
 
-        // Older versions of before Cubase 5 didn't always provide nul terminators in token strings.
+        // Older versions before Cubase 5 didn't always provide nul terminators in token strings.
         let nul_index = token_bytes.iter().position(|&byte| byte == 0);
         let token = nul_index.map_or_else(
             || String::from_utf8_lossy(token_bytes),
