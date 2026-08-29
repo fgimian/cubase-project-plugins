@@ -2,5 +2,4 @@
 group_imports = "StdExternalCrate"
 newline_style = "Unix"
 imports_granularity = "Crate"
-wrap_comments = true
 comment_width = 100
