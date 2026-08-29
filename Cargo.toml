@@ -10,13 +10,18 @@ repository = "https://github.com/fgimian/cubase-project-plugins"
 description = "Displays plugins used in your Cubase projects along with the Cubase version the project was created with."
 
 [lints.clippy]
-expect_used = "warn"
-unwrap_used = "warn"
-panic = "warn"
 correctness = { level = "warn", priority = 1 }
 pedantic = { level = "warn", priority = 1 }
 nursery = { level = "warn", priority = 1 }
 cargo = { level = "warn", priority = 1 }
+expect_used = "warn"
+unwrap_used = "warn"
+get_unwrap = "warn"
+panic = "warn"
+unimplemented = "warn"
+todo = "warn"
+unreachable = "warn"
+dbg_macro = "warn"
 multiple_crate_versions = { level = "allow", priority = 2 }
 
 [dependencies]
